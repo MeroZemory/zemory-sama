@@ -8,7 +8,6 @@ from enum import Enum
 import numpy as np
 import torch
 from silero_vad import load_silero_vad
-
 from zemory_vad.config import (
     VAD_DB_THRESHOLD,
     VAD_PROB_THRESHOLD,

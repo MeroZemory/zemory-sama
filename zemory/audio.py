@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import sys
 import threading
+import time
 
 import numpy as np
 import sounddevice as sd
 
-from zemory.config import SAMPLE_RATE, CHUNK_DURATION_MS
+from zemory.config import CHUNK_DURATION_MS, SAMPLE_RATE
 
 
 class MicrophoneStream:
@@ -44,7 +45,13 @@ class MicrophoneStream:
 
 
 class SpeakerStream:
-    """Plays PCM16 audio to the default speaker."""
+    """Plays PCM16 audio to the default speaker.
+
+    Exposes ``first_write_at`` — the ``time.monotonic()`` timestamp of the
+    first byte written to the playback buffer after the most recent
+    :meth:`arm` call. Used by the orchestrator to measure end-to-end turn
+    latency (speech_end → first audio out).
+    """
 
     def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self.queue: asyncio.Queue[bytes] = asyncio.Queue()
@@ -52,6 +59,13 @@ class SpeakerStream:
         self._stream: sd.OutputStream | None = None
         self._buffer = bytearray()
         self._lock = threading.Lock()
+        self.first_write_at: float | None = None
+        self._armed = False
+
+    def arm(self) -> None:
+        """Mark the start of a new response. Next buffer write records its timestamp."""
+        self.first_write_at = None
+        self._armed = True
 
     def _callback(
         self, outdata: np.ndarray, frames: int, time_info: object, status: sd.CallbackFlags
@@ -71,6 +85,10 @@ class SpeakerStream:
         while True:
             chunk = await self.queue.get()
             with self._lock:
+                if self._armed and not self._buffer:
+                    # record TTFB the moment non-empty audio first reaches the buffer
+                    self.first_write_at = time.monotonic()
+                    self._armed = False
                 self._buffer.extend(chunk)
 
     def clear(self) -> None:

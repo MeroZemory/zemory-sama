@@ -33,22 +33,37 @@ VAD_PRE_BUFFER_CHUNKS = 32  # 32 × 20ms = 640ms of pre-speech audio
 # Safety delay after speaker finishes before unmuting mic
 SAFETY_DELAY_S = 0.5
 
+# STT model (for separate transcription before sending text to LLM)
+STT_MODEL = "gpt-4o-transcribe"
+
+# Response length: "1-2 sentences", "3-4 sentences", "short paragraph", etc.
+RESPONSE_LENGTH = os.environ.get("ZEMORY_RESPONSE_LENGTH", "1-2 sentences")
+
+# Max conversation turns to keep in context (older turns are deleted)
+MAX_CONTEXT_TURNS = int(os.environ.get("ZEMORY_MAX_CONTEXT_TURNS", "10"))
+
 INSTRUCTIONS = (
     "You are Zemory, a friendly and enthusiastic AI assistant. "
     "You speak naturally and conversationally. "
     "Unless the user explicitly requests a different language, "
     "you MUST respond in the same language the user spoke in. "
-    "Keep responses concise since this is a voice conversation."
+    f"STRICT RULE: Your response MUST be {RESPONSE_LENGTH} maximum. "
+    "Never exceed this limit. This is a real-time voice conversation — "
+    "long responses feel unnatural. Be direct and concise. "
+    "If you do not know the answer to a factual question, or if the user asks about "
+    "current events, news, or anything you are uncertain about, say '찾아볼게요' "
+    "(or 'Let me look that up' if speaking English) and give a brief placeholder response. "
+    "The system will search the web and provide you with the answer shortly."
 )
 
-# Realtime API session — turn_detection disabled (local VAD)
+# --- Search configuration ---
+SEARCH_MAX_RESULTS = 5
+SEARCH_MODEL = "gpt-5-mini"
+
+# Realtime API session — text-only input (STT handled locally)
 SESSION_CONFIG = {
     "modalities": ["text"],
     "instructions": INSTRUCTIONS,
-    "input_audio_format": "pcm16",
-    "input_audio_transcription": {
-        "model": "gpt-4o-mini-transcribe",
-    },
     "turn_detection": None,
     "temperature": 0.8,
 }

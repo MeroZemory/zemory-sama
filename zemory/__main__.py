@@ -1,7 +1,7 @@
 import asyncio
 import sys
 
-from zemory.client import run
+from zemory.orchestrator import run
 
 
 def main() -> None:

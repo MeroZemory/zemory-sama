@@ -1,0 +1,7 @@
+# zemory-sama runtime configuration.
+# Values here are overridden by ZEMORY_* environment variables.
+
+[profile]
+# "realtime" (default) — OpenAI Realtime API with server_vad. Fast path.
+# "local"             — Local Silero VAD + Whisper STT + Realtime LLM.
+name = "realtime"

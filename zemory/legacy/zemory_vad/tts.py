@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 
 import httpx
-
 from zemory_vad.config import ELEVENLABS_API_KEY, ELEVENLABS_MODEL_ID, ELEVENLABS_VOICE_ID
 
 _SENTENCE_BOUNDARIES = frozenset(".?!。？！\n")

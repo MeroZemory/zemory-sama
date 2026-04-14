@@ -6,8 +6,7 @@ import threading
 
 import numpy as np
 import sounddevice as sd
-
-from zemory_vad.config import SAMPLE_RATE, CHUNK_DURATION_MS
+from zemory_vad.config import CHUNK_DURATION_MS, SAMPLE_RATE
 
 
 class MicrophoneStream:
