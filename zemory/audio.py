@@ -11,6 +11,31 @@ import sounddevice as sd
 from zemory.config import CHUNK_DURATION_MS, SAMPLE_RATE
 
 
+def generate_beep_pcm(
+    frequency_hz: float,
+    duration_ms: int,
+    sample_rate: int = SAMPLE_RATE,
+    volume: float = 0.15,
+) -> bytes:
+    """Generate a short sine-wave beep as PCM16 bytes at ``sample_rate``.
+
+    Includes a 5 ms fade-in/out envelope to avoid audible clicks at the
+    tone boundaries. Output is mono, little-endian int16 (matching the
+    SpeakerStream expected format).
+    """
+    n = int(sample_rate * duration_ms / 1000)
+    if n <= 0:
+        return b""
+    t = np.arange(n) / sample_rate
+    tone = np.sin(2 * np.pi * frequency_hz * t) * max(0.0, min(volume, 1.0))
+    fade = min(n // 4, int(sample_rate * 0.005))
+    if fade > 0:
+        tone[:fade] *= np.linspace(0.0, 1.0, fade)
+        tone[-fade:] *= np.linspace(1.0, 0.0, fade)
+    pcm16 = (tone * 32767).astype(np.int16)
+    return pcm16.tobytes()
+
+
 class MicrophoneStream:
     """Captures PCM16 audio from the default microphone."""
 

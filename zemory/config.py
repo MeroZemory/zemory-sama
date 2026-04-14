@@ -112,6 +112,25 @@ class Settings(BaseSettings):
     # with a headset or a device that has proper echo cancellation.
     enable_barge_in: bool = False
 
+    # --- transcript correction (context-aware rewrite of raw ASR output) ---
+    # Optional extra LLM hop that fixes likely transcription errors in the
+    # user's utterance using recent conversation context. Adds 200-500 ms
+    # per turn. Default off; set ZEMORY_TRANSCRIPT_CORRECTION=1 to enable.
+    transcript_correction_enabled: bool = False
+    transcript_correction_model: str = "gpt-5-mini"
+    transcript_correction_history_turns: int = 5
+
+    # --- "ready to speak" beep ---
+    # Short tone played through the speaker the moment the mic becomes live
+    # (RESPONDING → LISTENING transition, plus once at startup). Played
+    # while mic is still muted so the beep itself doesn't leak into the
+    # transcript; a small post-gap lets echo decay before listening resumes.
+    enable_ready_beep: bool = True
+    ready_beep_frequency_hz: float = 880.0   # A5 — subtle, not alarming
+    ready_beep_duration_ms: int = 80
+    ready_beep_volume: float = 0.15          # 0.0 – 1.0
+    ready_beep_post_gap_s: float = 0.1
+
     # --- sub-sections ---
     vad: VADSettings = Field(default_factory=VADSettings)
     tts: TTSSettings = Field(default_factory=TTSSettings)
@@ -163,6 +182,10 @@ def build_session_config() -> dict:
                 "threshold": realtime.server_vad_threshold,
                 "prefix_padding_ms": realtime.server_vad_prefix_padding_ms,
                 "silence_duration_ms": realtime.server_vad_silence_duration_ms,
+                # Always let the server kick off a response on speech_stopped.
+                # Speculative correction runs in parallel: if it matches the
+                # raw transcript the already-streaming response is kept; if
+                # it differs, the orchestrator cancels + replaces.
                 "create_response": True,
                 "interrupt_response": settings.enable_barge_in,
             },

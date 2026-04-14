@@ -118,15 +118,22 @@ class TTSTaskManager:
         quick = seq == 0  # RVC-style Quick for first sentence only
         async with self._sem:
             if self._aborted:
-                self._done[seq].set()
+                done = self._done.get(seq)
+                if done is not None:
+                    done.set()
                 return
             started = time.monotonic()
             first_chunk_logged = False
             try:
                 async for chunk in self._tts.synthesize(text, quick=quick):
+                    # Bail if the manager was reset/aborted between chunks —
+                    # our seq may have been removed from the dict.
                     if self._aborted:
                         break
-                    self._buffers[seq].append(chunk)
+                    buf = self._buffers.get(seq)
+                    if buf is None:
+                        break
+                    buf.append(chunk)
                     if not first_chunk_logged:
                         ttfb_ms = (time.monotonic() - started) * 1000
                         metrics.observe("ttfb.tts", ttfb_ms)
@@ -136,7 +143,9 @@ class TTSTaskManager:
                         first_chunk_logged = True
                     self._dispatch_wake.set()
             finally:
-                self._done[seq].set()
+                done = self._done.get(seq)
+                if done is not None:
+                    done.set()
                 self._dispatch_wake.set()
 
     # ------------------------------------------------------------------

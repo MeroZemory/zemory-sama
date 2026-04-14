@@ -104,6 +104,17 @@ class OpenAIRealtimeLLM:
         except Exception as e:  # pragma: no cover
             _log.warning("llm.cancel.failed", error=str(e))
 
+    async def trigger_response(self) -> None:
+        """Ask Realtime to generate a response for the current conversation.
+
+        Used when ``create_response=false`` is set (e.g. when transcript
+        correction takes ownership of response timing) and we want to
+        generate a reply without injecting a new user item.
+        """
+        if not self._conn:
+            return
+        await self._conn.response.create()
+
     async def delete_item(self, item_id: str) -> None:
         if self._conn:
             try:
@@ -147,7 +158,11 @@ class OpenAIRealtimeLLM:
         if t == "input_audio_buffer.speech_stopped":
             return {"type": "input.speech_stopped"}
         if t == "conversation.item.input_audio_transcription.completed":
-            return {"type": "input.transcript", "text": event.transcript}
+            return {
+                "type": "input.transcript",
+                "text": event.transcript,
+                "item_id": getattr(event, "item_id", None),
+            }
         if t == "conversation.item.created":
             item = getattr(event, "item", None)
             item_id = getattr(item, "id", None) if item else None
@@ -158,8 +173,10 @@ class OpenAIRealtimeLLM:
             return {"type": "text.done"}
         if t == "response.done":
             usage = getattr(event.response, "usage", None)
+            status = getattr(event.response, "status", None)
             return {
                 "type": "response.done",
+                "status": status,
                 "usage": {"total_tokens": usage.total_tokens} if usage else None,
             }
         if t == "error":
