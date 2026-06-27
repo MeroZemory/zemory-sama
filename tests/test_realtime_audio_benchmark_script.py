@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from scripts.bench_realtime_audio_fixture import (
@@ -9,8 +11,8 @@ from scripts.bench_realtime_audio_fixture import (
     _commit_and_trigger_response,
     _event_from_timings,
     _parse_args,
-    _stream_pcm_until_local_endpoint,
     _stream_pcm_realtime,
+    _stream_pcm_until_local_endpoint,
     _write_live_benchmark_artifacts,
 )
 

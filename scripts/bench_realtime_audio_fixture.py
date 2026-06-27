@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-Mode = Literal["semantic_vad", "forced_commit"]
+Mode = Literal["semantic_vad", "forced_commit", "local_endpoint_commit"]
 Eagerness = Literal["low", "medium", "high", "auto"]
 TurnDetection = Literal["semantic_vad", "server_vad", "none"]
 
@@ -225,7 +225,57 @@ async def _stream_pcm_realtime(
         maybe_sleep = sleep(chunk_duration_s)
         if maybe_sleep is not None:
             await maybe_sleep
+        else:
+            await asyncio.sleep(0)
     return time.monotonic()
+
+
+async def _stream_pcm_until_local_endpoint(
+    turn,
+    pcm: bytes,
+    *,
+    sample_rate: int,
+    input_chunk_ms: int,
+    silence_timeout_s: float,
+    sleep=asyncio.sleep,
+) -> tuple[float, float | None]:
+    chunk_duration_s = input_chunk_ms / 1000
+    chunk_size = int(sample_rate * chunk_duration_s) * 2
+
+    async def wait_for_speech_end() -> float:
+        while True:
+            event = await turn.events.get()
+            if event == "speech_end":
+                return time.monotonic()
+
+    speech_end_task = asyncio.create_task(wait_for_speech_end())
+    for chunk in _chunk_pcm(pcm, chunk_size=chunk_size):
+        await turn.feed(chunk)
+        maybe_sleep = sleep(chunk_duration_s)
+        if maybe_sleep is not None:
+            await maybe_sleep
+        else:
+            await asyncio.sleep(0)
+
+    audio_end_at = time.monotonic()
+    silence = b"\x00" * chunk_size
+    deadline = audio_end_at + silence_timeout_s
+    while not speech_end_task.done():
+        if time.monotonic() > deadline:
+            speech_end_task.cancel()
+            try:
+                await speech_end_task
+            except asyncio.CancelledError:
+                pass
+            return audio_end_at, None
+        await turn.feed(silence)
+        maybe_sleep = sleep(chunk_duration_s)
+        if maybe_sleep is not None:
+            await maybe_sleep
+        else:
+            await asyncio.sleep(0)
+
+    return audio_end_at, speech_end_task.result()
 
 
 async def _send_silence(llm, *, sample_rate: int, duration_s: float) -> None:
@@ -239,9 +289,13 @@ async def _send_silence(llm, *, sample_rate: int, duration_s: float) -> None:
 
 
 async def _commit_and_trigger_response(llm, *, audio_end_at: float) -> float:
-    if llm._conn is None:  # pragma: no cover - defensive live-only guard
-        raise RuntimeError("Realtime connection was not opened")
-    await llm._conn.input_audio_buffer.commit()
+    commit = getattr(llm, "commit_input_audio_buffer", None)
+    if callable(commit):
+        await commit()
+    else:  # pragma: no cover - compatibility fallback for ad hoc fakes
+        if llm._conn is None:
+            raise RuntimeError("Realtime connection was not opened")
+        await llm._conn.input_audio_buffer.commit()
     await llm.trigger_response()
     return audio_end_at
 
@@ -298,6 +352,7 @@ async def _measure_sample(
 ) -> dict[str, float | str | bool | None]:
     from zemory import config as cfg
     from zemory.providers.llm.openai_realtime import OpenAIRealtimeLLM
+    from zemory.providers.turn.realtime_manual import RealtimeManualTurnDetector
 
     cfg.settings.profile = "realtime_audio"
     cfg.settings.realtime.semantic_vad_eagerness = eagerness
@@ -306,6 +361,9 @@ async def _measure_sample(
     cfg.settings.realtime.server_vad_silence_duration_ms = server_vad_silence_ms
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
+    manual_turn = None
+    if mode == "local_endpoint_commit":
+        manual_turn = RealtimeManualTurnDetector(llm=llm)
     speaker = None
     feed_task: asyncio.Task | None = None
     if play_output:
@@ -320,19 +378,36 @@ async def _measure_sample(
         waiter = asyncio.create_task(
             _wait_for_first_audio(llm, timeout_s=timeout_s, speaker=speaker)
         )
-        audio_end_at = await _stream_pcm_realtime(
-            llm,
-            pcm,
-            sample_rate=cfg.SAMPLE_RATE,
-            input_chunk_ms=input_chunk_ms,
-        )
-        if mode == "forced_commit":
+        if mode == "local_endpoint_commit":
+            if manual_turn is None:  # pragma: no cover - defensive guard
+                raise RuntimeError("manual turn detector was not initialized")
+            audio_end_at, speech_stopped_at = await _stream_pcm_until_local_endpoint(
+                manual_turn,
+                pcm,
+                sample_rate=cfg.SAMPLE_RATE,
+                input_chunk_ms=input_chunk_ms,
+                silence_timeout_s=timeout_s,
+            )
+            if speech_stopped_at is None:
+                raise TimeoutError("local endpoint detector did not emit speech_end")
             audio_end_at = await _commit_and_trigger_response(
                 llm,
                 audio_end_at=audio_end_at,
             )
         else:
-            await _send_silence(llm, sample_rate=cfg.SAMPLE_RATE, duration_s=1.6)
+            audio_end_at = await _stream_pcm_realtime(
+                llm,
+                pcm,
+                sample_rate=cfg.SAMPLE_RATE,
+                input_chunk_ms=input_chunk_ms,
+            )
+            if mode == "forced_commit":
+                audio_end_at = await _commit_and_trigger_response(
+                    llm,
+                    audio_end_at=audio_end_at,
+                )
+            else:
+                await _send_silence(llm, sample_rate=cfg.SAMPLE_RATE, duration_s=1.6)
         (
             speech_stopped_at,
             first_audio_at,
@@ -349,6 +424,8 @@ async def _measure_sample(
                 pass
         if speaker is not None:
             speaker.stop()
+        if manual_turn is not None:
+            await manual_turn.close()
 
     return _event_from_timings(
         fixture=sample.name,
@@ -432,7 +509,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["semantic_vad", "forced_commit"],
+        choices=["semantic_vad", "forced_commit", "local_endpoint_commit"],
         default="semantic_vad",
     )
     parser.add_argument(
