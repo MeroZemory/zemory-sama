@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import shutil
 import subprocess
 import sys
@@ -96,6 +97,66 @@ def _event_from_timings(
 def _require_binary(name: str) -> None:
     if shutil.which(name) is None:
         raise SystemExit(f"Required binary not found: {name}")
+
+
+def _write_jsonl(path: Path, events: list[dict[str, float | str | bool | None]]) -> None:
+    rows = [json.dumps(event, ensure_ascii=False, sort_keys=True) for event in events]
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+def _write_live_benchmark_artifacts(
+    events: list[dict[str, float | str | bool | None]],
+    *,
+    out_dir: Path,
+    title: str,
+    source_note: str,
+) -> None:
+    from zemory.observability.benchmark_artifacts import write_benchmark_artifacts
+
+    valid_events = [event for event in events if event.get("total_ms") is not None]
+    if valid_events:
+        write_benchmark_artifacts(
+            events,
+            out_dir=out_dir,
+            title=title,
+            source_note=source_note,
+        )
+        return
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    _write_jsonl(out_dir / "latency-events.jsonl", events)
+    early_cutoff_count = sum(1 for event in events if event.get("early_cutoff"))
+    summary = {
+        "title": title,
+        "source_note": source_note,
+        "turn_count": 0,
+        "early_cutoff_count": early_cutoff_count,
+        "total_events": len(events),
+    }
+    (out_dir / "summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (out_dir / "README.md").write_text(
+        f"""# {title}
+
+{source_note}
+
+No valid latency samples were recorded. This probe is rejected because all
+{len(events)} event(s) were invalid, including {early_cutoff_count} early cutoff
+event(s).
+""",
+        encoding="utf-8",
+    )
+    (out_dir / "latency.svg").write_text(
+        f"""<svg xmlns="http://www.w3.org/2000/svg" width="760" height="96" role="img" aria-label="Invalid latency benchmark">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <text x="24" y="34" font-size="18" font-weight="700" fill="#111827">{title}</text>
+  <text x="24" y="64" font-size="14" fill="#b91c1c">No valid latency samples; rejected as early cutoff probe.</text>
+</svg>
+""",
+        encoding="utf-8",
+    )
 
 
 def _render_sample(sample: Sample, out_dir: Path) -> bytes:
@@ -216,8 +277,6 @@ async def _measure_sample(
 
 
 async def _run(args: argparse.Namespace) -> None:
-    from zemory.observability.benchmark_artifacts import write_benchmark_artifacts
-
     _require_binary("say")
     _require_binary("ffmpeg")
 
@@ -254,7 +313,7 @@ async def _run(args: argparse.Namespace) -> None:
         "Metric is final source-audio chunk sent to first response audio delta; "
         "raw transcripts are not recorded."
     )
-    write_benchmark_artifacts(
+    _write_live_benchmark_artifacts(
         events,
         out_dir=args.out,
         title=args.title,
