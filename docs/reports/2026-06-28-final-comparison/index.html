@@ -178,8 +178,8 @@
     <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
-      <span class="pill">성능 기준 commit: <code>0b51b96</code></span>
-      <span class="pill">검증: 80 tests, coverage 86.94%</span>
+      <span class="pill">성능 기준 commit: <code>d0df6f3</code></span>
+      <span class="pill">검증: 82 tests, coverage 86.96%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -194,8 +194,8 @@
       <span>n8 full API-to-device p50. 첫 로컬 speaker playback callback 기준.</span>
     </div>
     <div class="metric">
-      <strong>1403.3 ms</strong>
-      <span>n8 full API-to-device representative max. severe outlier 없음.</span>
+      <strong>957 ms</strong>
+      <span>forced commit upper-bound n8 p50. 정확한 endpoint를 안다는 가정.</span>
     </div>
     <div class="metric">
       <strong>6.5 ms</strong>
@@ -210,6 +210,7 @@
     </div>
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
     <p>full API-to-device rerun도 완료됐다. 8회 live fixture에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1275.0 ms, representative max 1403.3 ms, outlier 0이었다. API first audio delta에서 speaker callback까지의 추가 비용은 p50 6.5 ms, representative max 9.8 ms라 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
+    <p><code>turn_detection=none</code>과 exact endpoint forced commit으로 상한선을 재면 p50 957.0 ms, representative max 1354.2 ms였다. 이는 server_vad full-device p50보다 318.0 ms 빠르지만 실제 앱이 사용자 발화 종료를 정확히 알아야 하므로 기본값이 아니라 endpoint anticipation/local endpoint research 후보로 둔다.</p>
     <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
   </section>
 
@@ -286,6 +287,15 @@
           <td class="num">1403.3 ms</td>
           <td class="num">0</td>
           <td class="status-good">API-to-device callback 기준 full rerun.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device n8</a></td>
+          <td class="num">8</td>
+          <td class="num">957.0 ms</td>
+          <td class="num">1354.2 ms</td>
+          <td class="num">1354.2 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">정확한 endpoint를 안다는 상한선. default 아님.</td>
         </tr>
         <tr>
           <td><a href="../../benchmarks/2026-06-27-server-vad-200-n8/">server_vad 200 ms n8</a></td>
@@ -433,6 +443,35 @@
       <img src="live-device-playback.svg" alt="Live API to device playback benchmark SVG">
       <figcaption>full rerun은 API/network/model/VAD와 local speaker callback을 같은 측정선에 둔다.</figcaption>
     </figure>
+
+    <h3>Forced commit upper bound</h3>
+    <p><code>turn_detection=none</code>으로 서버 VAD를 끄고, fixture의 source audio가 끝나는 순간 직접 commit/response를 호출했다. 이는 사용자의 실제 발화 종료를 정확히 아는 이상적인 endpoint detector 또는 speculative endpoint anticipation의 상한선에 가깝다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th class="num">Samples</th>
+          <th class="num">Device p50</th>
+          <th class="num">Representative max</th>
+          <th class="num">API to playback p50</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device playback n8</a></td>
+          <td class="num">8</td>
+          <td class="num">957.0 ms</td>
+          <td class="num">1354.2 ms</td>
+          <td class="num">9.6 ms</td>
+          <td class="status-warn">Promising upper bound; requires endpoint confidence before default use.</td>
+        </tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="forced-commit-upper-bound.svg" alt="Forced commit upper-bound benchmark SVG">
+      <figcaption>forced commit removes the server VAD wait, but correctness depends on endpoint prediction quality.</figcaption>
+    </figure>
   </section>
 
   <section>
@@ -562,13 +601,14 @@
   <section>
     <h2>6. 남은 병목과 다음 실험</h2>
     <div class="warning">
-      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk, session token cap, standalone speaker callback, full API-to-device callback 후보를 검증했음을 보여준다. 남은 고위험 후보는 speculative endpoint anticipation이다.</p>
+      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk, session token cap, standalone speaker callback, full API-to-device callback, forced commit upper bound를 검증했음을 보여준다. 남은 고위험 후보는 endpoint confidence를 갖춘 speculative endpoint anticipation이다.</p>
     </div>
     <ol>
       <li><strong>Full live API-to-device rerun:</strong> 완료. n8 p50 1275.0 ms, representative max 1403.3 ms, API-to-playback p50 6.5 ms.</li>
       <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
       <li><strong>Session token cap:</strong> 완료. 현재 Realtime GA session update가 <code>session.max_response_output_tokens</code>를 거부하므로 자동 server VAD 응답 경로에서는 적용하지 않는다.</li>
-      <li><strong>Speculative endpoint anticipation:</strong> 2026-06-11 Endpoint Anticipation 연구는 평균 505 ms latency 감소와 28.4% speculative computation 증가를 보고한다. correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
+      <li><strong>Forced commit upper bound:</strong> 완료. <code>turn_detection=none</code> exact endpoint n8은 p50 957.0 ms로 server_vad full-device n8보다 318.0 ms 빠르다.</li>
+      <li><strong>Speculative endpoint anticipation:</strong> 2026-06-11 Endpoint Anticipation 연구는 평균 505 ms latency 감소와 28.4% speculative computation 증가를 보고한다. forced commit 결과와 방향이 맞지만, correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
       <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
     </ol>
   </section>
@@ -591,6 +631,7 @@
       <li><a href="../../benchmarks/2026-06-28-session-token-cap-probe/">Session token cap probe</a></li>
       <li><a href="../../benchmarks/2026-06-28-speaker-output-callback/">Speaker output callback benchmark</a></li>
       <li><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live API-to-device playback benchmark n8</a></li>
+      <li><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device playback benchmark n8</a></li>
     </ul>
   </section>
 </main>

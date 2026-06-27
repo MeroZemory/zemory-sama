@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="330" role="img" aria-labelledby="title desc">
+  <title id="title">Forced commit upper bound</title>
+  <desc id="desc">Comparison of server VAD full device playback and exact endpoint forced commit playback.</desc>
+  <rect width="980" height="330" fill="#ffffff"/>
+  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Endpoint upper bound: exact commit saves about 318 ms p50</text>
+  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">Both runs use 8 live macOS say fixtures, 20 ms input chunks, and first local speaker playback callback timing.</text>
+  <line x1="270" y1="258" x2="900" y2="258" stroke="#cbd5e1"/>
+  <text x="270" y="280" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0</text>
+  <text x="401" y="280" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">500</text>
+  <text x="541" y="280" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
+  <text x="681" y="280" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1500</text>
+  <text x="821" y="280" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000 ms</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12">
+    <text x="28" y="118" fill="#111827">server_vad 200 ms full device</text>
+    <rect x="270" y="102" width="357.0" height="22" rx="3" fill="#22c55e"/>
+    <line x1="663" y1="96" x2="663" y2="132" stroke="#15803d" stroke-width="3"/>
+    <text x="640" y="118" fill="#14532d">p50 1275.0 ms</text>
+    <text x="676" y="118" fill="#14532d">rep max 1403.3 ms</text>
+
+    <text x="28" y="168" fill="#111827">forced commit exact endpoint</text>
+    <rect x="270" y="152" width="268.0" height="22" rx="3" fill="#f59e0b"/>
+    <line x1="649" y1="146" x2="649" y2="182" stroke="#b45309" stroke-width="3"/>
+    <text x="550" y="168" fill="#78350f">p50 957.0 ms</text>
+    <text x="662" y="168" fill="#78350f">rep max 1354.2 ms</text>
+
+    <text x="28" y="218" fill="#111827">p50 improvement envelope</text>
+    <rect x="538" y="202" width="89.0" height="22" rx="3" fill="#fb923c"/>
+    <text x="640" y="218" fill="#7c2d12">318.0 ms</text>
+  </g>
+  <text x="28" y="308" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Decision: do not change the default. Use this as the target envelope for a guarded endpoint-anticipation research profile.</text>
+</svg>
