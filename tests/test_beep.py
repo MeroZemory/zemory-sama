@@ -6,7 +6,7 @@ import asyncio
 
 import numpy as np
 
-from zemory.audio import SpeakerStream, generate_beep_pcm, output_block_size
+from zemory.audio import MicrophoneStream, SpeakerStream, generate_beep_pcm, output_block_size
 
 
 def test_beep_has_expected_length():
@@ -56,6 +56,46 @@ def test_volume_clamped_to_one():
 
 def test_output_block_size_uses_10ms_chunks_by_default():
     assert output_block_size(sample_rate=24_000) == 240
+
+
+def test_microphone_stream_requests_low_latency_input(monkeypatch):
+    captured: dict = {}
+
+    class FakeStream:
+        def start(self) -> None:
+            return None
+
+    def fake_input_stream(**kwargs):
+        captured.update(kwargs)
+        return FakeStream()
+
+    monkeypatch.setattr("zemory.audio.sd.InputStream", fake_input_stream)
+
+    stream = MicrophoneStream(asyncio.new_event_loop())
+    stream.start()
+
+    assert captured["latency"] == "low"
+    assert captured["blocksize"] == stream.chunk_size
+
+
+def test_speaker_stream_requests_low_latency_output(monkeypatch):
+    captured: dict = {}
+
+    class FakeStream:
+        def start(self) -> None:
+            return None
+
+    def fake_output_stream(**kwargs):
+        captured.update(kwargs)
+        return FakeStream()
+
+    monkeypatch.setattr("zemory.audio.sd.OutputStream", fake_output_stream)
+
+    stream = SpeakerStream(asyncio.new_event_loop())
+    stream.start()
+
+    assert captured["latency"] == "low"
+    assert captured["blocksize"] == output_block_size()
 
 
 async def test_speaker_records_first_callback_playback_time():
