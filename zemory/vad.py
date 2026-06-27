@@ -35,13 +35,19 @@ class SileroVAD:
 
     def __call__(self, audio_int16: np.ndarray) -> float:
         """Run inference on a 512-sample chunk at 16 kHz. Returns [0, 1]."""
+        audio_f32 = audio_int16.astype(np.float32) / 32768.0
         if self._onnx:
-            # ONNX path takes float32 numpy directly
-            audio_f32 = audio_int16.astype(np.float32) / 32768.0
-            prob = self._model(audio_f32, settings.vad_sample_rate).item()
+            try:
+                prob = self._model(audio_f32, settings.vad_sample_rate).item()
+            except AttributeError as exc:
+                if "dim" not in str(exc):
+                    raise
+                import torch
+                audio_t = torch.from_numpy(audio_f32)
+                prob = self._model(audio_t, settings.vad_sample_rate).item()
         else:
             import torch
-            audio_t = torch.FloatTensor(audio_int16.astype(np.float32) / 32768.0)
+            audio_t = torch.FloatTensor(audio_f32)
             prob = self._model(audio_t, settings.vad_sample_rate).item()
         return prob
 
