@@ -6,6 +6,7 @@ import pytest
 
 from scripts.bench_realtime_audio_fixture import (
     _chunk_pcm,
+    _commit_and_trigger_response,
     _event_from_timings,
     _parse_args,
     _stream_pcm_realtime,
@@ -173,3 +174,32 @@ async def test_stream_pcm_realtime_uses_requested_chunk_duration() -> None:
     )
 
     assert [len(chunk) for chunk in llm.chunks] == [480, 480]
+
+
+async def test_forced_commit_keeps_source_audio_end_timestamp() -> None:
+    class FakeInputAudioBuffer:
+        def __init__(self) -> None:
+            self.committed = False
+
+        async def commit(self) -> None:
+            self.committed = True
+
+    class FakeConnection:
+        def __init__(self) -> None:
+            self.input_audio_buffer = FakeInputAudioBuffer()
+
+    class FakeLLM:
+        def __init__(self) -> None:
+            self._conn = FakeConnection()
+            self.triggered = False
+
+        async def trigger_response(self) -> None:
+            self.triggered = True
+
+    llm = FakeLLM()
+
+    audio_end_at = await _commit_and_trigger_response(llm, audio_end_at=123.4)
+
+    assert audio_end_at == pytest.approx(123.4)
+    assert llm._conn.input_audio_buffer.committed is True
+    assert llm.triggered is True
