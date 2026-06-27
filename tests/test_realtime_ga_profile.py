@@ -44,6 +44,7 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
     }
     assert session["audio"]["output"]["voice"] == "marin"
     assert session["reasoning"]["effort"] == "low"
+    assert session["max_response_output_tokens"] == 512
     assert "temperature" not in session
     assert "modalities" not in session
 
