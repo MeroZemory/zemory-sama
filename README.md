@@ -50,6 +50,24 @@ Steps:
 - Records latency metrics and ships a JSONL benchmark checker.
 - Runs hardware-free regression tests for the core orchestration contracts.
 
+## Performance Snapshot
+
+Benchmarks were refreshed on 2026-06-27 on macOS Apple Silicon with the
+`realtime_audio` profile. Artifacts are numeric-only; raw runtime logs are not
+committed because they can contain private transcript text.
+
+| Run | Fixture | Key result | Artifact |
+| --- | --- | --- | --- |
+| Manual live session | 28 real conversation turns | turn p50 816.0 ms, p95 1698.0 ms, interrupt p95 1.5 ms | [docs/benchmarks/2026-06-27-local-manual](docs/benchmarks/2026-06-27-local-manual) |
+| Controlled audio samples | 6 Korean/English macOS `say` clips | input commit to first audio p50 920.4 ms, p95 1202.8 ms | [docs/benchmarks/2026-06-27-controlled-say](docs/benchmarks/2026-06-27-controlled-say) |
+| Reference setup comparison | 6 major AI VTuber / realtime voice repos | all dependency setups completed with project-specific environments; no invented cross-repo latency numbers | [docs/benchmarks/2026-06-27-comparison](docs/benchmarks/2026-06-27-comparison) |
+
+![Manual live latency](docs/benchmarks/2026-06-27-local-manual/latency.svg)
+
+![Controlled audio latency](docs/benchmarks/2026-06-27-controlled-say/latency.svg)
+
+![Reference setup comparison](docs/benchmarks/2026-06-27-comparison/setup-comparison.svg)
+
 ## Status
 
 This is an active research/runtime repo, not a packaged end-user app yet.
@@ -200,14 +218,23 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 62 tests passing.
+- 65 tests passing.
 - 80% coverage gate.
-- Core coverage currently above 85%.
+- Core coverage currently above 86%.
 
 ## Latency Benchmarks
 
 Runtime logs emit `turn.complete` events with timing fields such as
 `total_ms`, `first_tts_byte_ms`, and `interrupted`.
+
+Generate README-ready artifacts from a local runtime log:
+
+```bash
+uv run python scripts/build_benchmark_artifacts.py \
+  --log .zemory/run.log \
+  --out docs/benchmarks/local-run \
+  --title "zemory-sama realtime_audio local benchmark"
+```
 
 Check a JSONL export against release thresholds:
 
@@ -220,6 +247,10 @@ Default thresholds:
 - turn p50 <= 700 ms
 - turn p95 <= 1200 ms
 - interrupt p95 <= 150 ms
+
+The controlled 2026-06-27 fixture reports input-stream end/commit to first
+response audio because synthetic TTS clips do not always trigger
+`semantic_vad` `speech_stopped` consistently.
 
 ## Repository Layout
 

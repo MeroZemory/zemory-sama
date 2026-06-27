@@ -1,0 +1,26 @@
+[
+  {
+    "repo": "kimjammer/Neuro",
+    "environment": "macos arm64 Python 3.10",
+    "status": "pass",
+    "returncode": 0,
+    "duration_s": 24.8,
+    "output_tail": " + transformers==4.40.2\n + twitchapi==4.5.0\n + typeguard==4.5.2\n + typer==0.26.8\n + typer-slim==0.24.0\n + typing-extensions==4.15.0\n + typing-inspection==0.4.2\n + tzlocal==5.4.3\n + umap-learn==0.5.6\n + urllib3==2.7.0\n + uvicorn==0.49.0\n + uvloop==0.22.1\n + wasabi==1.1.3\n + watchfiles==1.2.0\n + wcwidth==0.8.1\n + weasel==0.4.3\n + webrtcvad-wheels==2.0.14\n + websocket-client==1.8.0\n + websockets==12.0\n + werkzeug==3.1.8\n + wrapt==2.2.2\n + wsproto==1.3.2\n + yarl==1.24.2\n + zipp==4.1.0\nwarning: The package `realtimetts==0.4.1` does not have an extra named `coqui`"
+  },
+  {
+    "repo": "kimjammer/Neuro",
+    "environment": "macos arm64 Python 3.11",
+    "status": "pass",
+    "returncode": 0,
+    "duration_s": 29.0,
+    "output_tail": " + transformers==4.40.2\n + twitchapi==4.5.0\n + typeguard==4.5.2\n + typer==0.26.8\n + typer-slim==0.24.0\n + typing-extensions==4.15.0\n + typing-inspection==0.4.2\n + tzlocal==5.4.3\n + umap-learn==0.5.6\n + urllib3==2.7.0\n + uvicorn==0.49.0\n + uvloop==0.22.1\n + wasabi==1.1.3\n + watchfiles==1.2.0\n + wcwidth==0.8.1\n + weasel==0.4.3\n + webrtcvad-wheels==2.0.14\n + websocket-client==1.8.0\n + websockets==12.0\n + werkzeug==3.1.8\n + wrapt==2.2.2\n + wsproto==1.3.2\n + yarl==1.24.2\n + zipp==4.1.0\nwarning: The package `realtimetts==0.4.1` does not have an extra named `coqui`"
+  },
+  {
+    "repo": "StudioMovieGirl/AIRIS-VtuberAI",
+    "environment": "docker linux/amd64 python:3.10-slim",
+    "status": "fail",
+    "returncode": 1,
+    "duration_s": 157.3,
+    "output_tail": "      [stdout]\n      running bdist_wheel\n      running build\n      running build_py\n      creating build/lib.linux-x86_64-cpython-310/pyaudio\n      copying src/pyaudio/__init__.py ->\n      build/lib.linux-x86_64-cpython-310/pyaudio\n      running build_ext\n      building 'pyaudio._portaudio' extension\n      creating build/temp.linux-x86_64-cpython-310/src/pyaudio\n      gcc -Wno-unused-result -Wsign-compare -DNDEBUG -g -fwrapv\n      -O3 -Wall -fPIC -I/usr/local/include -I/usr/include\n      -I/root/.cache/uv/builds-v0/.tmpngeZbP/include\n      -I/usr/local/include/python3.10 -c src/pyaudio/device_api.c -o\n      build/temp.linux-x86_64-cpython-310/src/pyaudio/device_api.o\n\n      [stderr]\n      /root/.cache/uv/builds-v0/.tmpngeZbP/lib/python3.10/site-packages/setuptools/dist.py:765:\n      SetuptoolsDeprecationWarning: License classifiers are deprecated.\n      !!\n\n      \n      ********************************************************************************\n              Please consider removing the following classifiers in favor of a\n      SPDX license expression:\n\n              License :: OSI Approved :: MIT License\n\n              See\n      https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license\n      for details.\n      \n      ********************************************************************************\n\n      !!\n        self._finalize_license_expression()\n      error: command 'gcc' failed: No such file or directory\n\n\nhint: Build failures usually indicate a problem with the package or the build environment"
+  }
+]

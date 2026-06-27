@@ -1,0 +1,6 @@
+{"event": "turn.complete", "first_tts_byte_ms": 1005.2, "fixture": "en_short", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 1005.2, "voice": "Samantha"}
+{"event": "turn.complete", "first_tts_byte_ms": 858.6, "fixture": "en_summary", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 858.6, "voice": "Samantha"}
+{"event": "turn.complete", "first_tts_byte_ms": 819.1, "fixture": "en_interrupt", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 819.1, "voice": "Samantha"}
+{"event": "turn.complete", "first_tts_byte_ms": 959.2, "fixture": "ko_short", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 959.2, "voice": "Yuna"}
+{"event": "turn.complete", "first_tts_byte_ms": 1202.8, "fixture": "ko_summary", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 1202.8, "voice": "Yuna"}
+{"event": "turn.complete", "first_tts_byte_ms": 920.4, "fixture": "ko_interrupt", "interrupted": false, "profile": "realtime_audio", "sample_source": "macos_say_forced_commit", "total_ms": 920.4, "voice": "Yuna"}

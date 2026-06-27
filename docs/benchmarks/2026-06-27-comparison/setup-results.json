@@ -1,0 +1,65 @@
+[
+  {
+    "repo": "MeroZemory/zemory-sama",
+    "kind": "uv sync",
+    "command": "uv sync --frozen",
+    "status": "pass",
+    "returncode": 0,
+    "duration_s": 0.0,
+    "output_tail": "Audited 51 packages in 0.04ms"
+  },
+  {
+    "repo": "Open-LLM-VTuber/Open-LLM-VTuber",
+    "kind": "uv sync",
+    "command": "uv sync --locked --no-install-project",
+    "status": "pass",
+    "returncode": 0,
+    "duration_s": 28.3,
+    "output_tail": " + soundfile==0.13.1\n + soupsieve==2.8.3\n + sse-starlette==3.2.0\n + starlette==0.50.0\n + sympy==1.14.0\n + tabulate==0.9.0\n + tomli==2.4.0\n + torch==2.10.0\n + tqdm==4.67.1\n + typer==0.21.1\n + typing-extensions==4.15.0\n + typing-inspection==0.4.2\n + urllib3==2.6.3\n + uvicorn==0.40.0\n + uvloop==0.22.1\n + virtualenv==20.36.1\n + watchfiles==1.1.1\n + websocket-client==1.9.0\n + websockets==16.0\n + yarl==1.22.0"
+  },
+  {
+    "repo": "moeru-ai/airi",
+    "kind": "pnpm install",
+    "command": "pnpm install --frozen-lockfile --ignore-scripts",
+    "status": "pass",
+    "returncode": 0,
+    "duration_s": 201.5,
+    "output_tail": "+ sponsors-svg 0.3.0\n+ taze 19.11.0\n+ tinyexec 1.1.1\n+ tsdown 0.21.9\n+ tsx 4.21.0\n+ turbo 2.9.6\n+ typescript 5.9.3\n+ uncrypto 0.1.3\n+ unocss 66.6.8\n+ unocss-preset-scrollbar 4.0.0\n+ unplugin-lightningcss 0.4.5\n+ unplugin-raw 0.7.0\n+ unplugin-unused 0.5.7\n+ vite 8.0.8\n+ vite-plugin-inspect 12.0.0-beta.1\n+ vitest 4.1.4\n+ vitest-browser-vue 2.1.0\n+ yaml 2.8.3\n\nDone in 3m 17.7s using pnpm v10.33.0"
+  },
+  {
+    "repo": "KoljaB/RealtimeVoiceChat",
+    "kind": "uv pip install -r requirements",
+    "command": "uv venv /tmp/zemory-bench-envs/RealtimeVoiceChat && uv pip install -r _ref/RealtimeVoiceChat/requirements.txt",
+    "status": "fail",
+    "returncode": 1,
+    "duration_s": 28.9,
+    "output_tail": "              License :: OSI Approved :: MIT License\n\n              See\n      https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license\n      for details.\n      \n      ********************************************************************************\n\n      !!\n        self._finalize_license_expression()\n      src/pyaudio/device_api.c:9:10: fatal error: 'portaudio.h' file not found\n          9 | #include \"portaudio.h\"\n            |          ^~~~~~~~~~~~~\n      1 error generated.\n      error: command '/usr/bin/cc' failed with exit code 1\n\n      hint: This error likely indicates that you need to install a library\n      that provides \"portaudio.h\" for `pyaudio@0.2.14`\n  help: `pyaudio` (v0.2.14) was included because `realtimestt` (v0.3.104)\n        depends on `pyaudio`"
+  },
+  {
+    "repo": "kimjammer/Neuro",
+    "kind": "uv pip install -r requirements",
+    "command": "uv venv /tmp/zemory-bench-envs/Neuro && uv pip install -r _ref/Neuro/requirements.txt",
+    "status": "fail",
+    "returncode": 1,
+    "duration_s": 18.5,
+    "output_tail": "              License :: OSI Approved :: MIT License\n\n              See\n      https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license\n      for details.\n      \n      ********************************************************************************\n\n      !!\n        self._finalize_license_expression()\n      src/pyaudio/device_api.c:9:10: fatal error: 'portaudio.h' file not found\n          9 | #include \"portaudio.h\"\n            |          ^~~~~~~~~~~~~\n      1 error generated.\n      error: command '/usr/bin/cc' failed with exit code 1\n\n      hint: This error likely indicates that you need to install a library\n      that provides \"portaudio.h\" for `pyaudio@0.2.14`\n  help: `pyaudio` (v0.2.14) was included because `realtimetts` (v0.4.1)\n        depends on `pyaudio`"
+  },
+  {
+    "repo": "ardha27/AI-Waifu-Vtuber",
+    "kind": "uv pip install -r requirements",
+    "command": "uv venv /tmp/zemory-bench-envs/AI-Waifu-Vtuber && uv pip install -r _ref/AI-Waifu-Vtuber/requirements.txt",
+    "status": "fail",
+    "returncode": 1,
+    "duration_s": 2.7,
+    "output_tail": "      SPDX license expression:\n\n              License :: OSI Approved :: MIT License\n\n              See\n      https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license\n      for details.\n      \n      ********************************************************************************\n\n      !!\n        self._finalize_license_expression()\n      src/pyaudio/device_api.c:9:10: fatal error: 'portaudio.h' file not found\n          9 | #include \"portaudio.h\"\n            |          ^~~~~~~~~~~~~\n      1 error generated.\n      error: command '/usr/bin/cc' failed with exit code 1\n\n      hint: This error likely indicates that you need to install a library\n      that provides \"portaudio.h\" for `pyaudio@0.2.14`"
+  },
+  {
+    "repo": "StudioMovieGirl/AIRIS-VtuberAI",
+    "kind": "uv pip install -r requirements",
+    "command": "uv venv /tmp/zemory-bench-envs/AIRIS-VtuberAI && uv pip install -r _ref/AIRIS-VtuberAI/requirements.txt",
+    "status": "fail",
+    "returncode": 1,
+    "duration_s": 3.0,
+    "output_tail": "Using CPython 3.12.12\nCreating virtual environment at: /tmp/zemory-bench-envs/AIRIS-VtuberAI\nActivate with: source /tmp/zemory-bench-envs/AIRIS-VtuberAI/bin/activate\nUsing Python 3.12.12 environment at: /tmp/zemory-bench-envs/AIRIS-VtuberAI\n  × No solution found when resolving dependencies:\n  ╰─▶ Because bitsandbytes==0.43.1 has no wheels with a matching platform tag\n      (e.g., `macosx_26_0_arm64`) and you require bitsandbytes==0.43.1, we can\n      conclude that your requirements are unsatisfiable.\n\n      hint: Wheels are available for `bitsandbytes` (v0.43.1) on the following\n      platforms: `manylinux_2_24_x86_64`, `win_amd64`"
+  }
+]
