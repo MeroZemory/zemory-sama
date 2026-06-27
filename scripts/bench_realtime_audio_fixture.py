@@ -65,6 +65,8 @@ def _event_from_timings(
     speech_stopped_at: float | None,
     first_audio_at: float,
 ) -> dict[str, float | str | bool | None]:
+    early_cutoff = first_audio_at < audio_end_at
+    total_ms = None if early_cutoff else round((first_audio_at - audio_end_at) * 1000, 1)
     event = {
         "event": "turn.complete",
         "fixture": fixture,
@@ -73,9 +75,10 @@ def _event_from_timings(
         "eagerness": eagerness,
         "turn_detection": turn_detection,
         "interrupted": False,
+        "early_cutoff": early_cutoff,
         "sample_source": f"macos_say_{mode}",
-        "total_ms": round((first_audio_at - audio_end_at) * 1000, 1),
-        "first_tts_byte_ms": round((first_audio_at - audio_end_at) * 1000, 1),
+        "total_ms": total_ms,
+        "first_tts_byte_ms": total_ms,
         "vad_wait_ms": None,
         "first_audio_after_speech_stopped_ms": None,
     }
