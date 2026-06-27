@@ -11,6 +11,7 @@ def test_write_benchmark_artifacts_without_transcript_text(tmp_path) -> None:
     events = [
         {"event": "turn.complete", "turn_id": 1, "total_ms": 500, "first_tts_byte_ms": 490},
         {"event": "turn.complete", "turn_id": 2, "total_ms": 700, "first_tts_byte_ms": 690},
+        {"event": "turn.complete", "turn_id": 3, "total_ms": None, "early_cutoff": True},
         {"event": "interrupt.done", "interrupt_ms": 1.3},
     ]
 
@@ -27,12 +28,16 @@ def test_write_benchmark_artifacts_without_transcript_text(tmp_path) -> None:
 
     assert summary["title"] == "local manual session"
     assert summary["turn_count"] == 2
+    assert summary["total_event_count"] == 4
+    assert summary["invalid_latency_count"] == 1
+    assert summary["early_cutoff_count"] == 1
     assert summary["turn_p50_ms"] == 500
     assert summary["turn_p95_ms"] == 700
     assert summary["turn_representative_max_ms"] == 700
-    assert outputs.events_jsonl.read_text(encoding="utf-8").count("\n") == 3
+    assert outputs.events_jsonl.read_text(encoding="utf-8").count("\n") == 4
     assert "numeric-only export" in markdown
     assert "turn p50" in markdown
+    assert "early cutoffs" in markdown
     assert "representative max" in markdown
     assert "turn max" not in markdown
     assert "<svg" in svg
