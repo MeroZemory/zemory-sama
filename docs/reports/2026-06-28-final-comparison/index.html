@@ -469,6 +469,11 @@
           <td>10 ms chunks increased n8 p50 and representative max; no default change.</td>
         </tr>
         <tr>
+          <td>Response cap probe</td>
+          <td>No session-level <code>max_response_output_tokens</code></td>
+          <td>Live GA session update rejected <code>session.max_response_output_tokens</code>; keep automatic server VAD response path unchanged.</td>
+        </tr>
+        <tr>
           <td>Playback</td>
           <td>10 ms output callback, first playback callback timestamp</td>
           <td>buffer write가 아니라 실제 callback 소비 시각을 측정해 로컬 playback 대기를 드러낸다.</td>
@@ -485,11 +490,12 @@
   <section>
     <h2>6. 남은 병목과 다음 실험</h2>
     <div class="warning">
-      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk 후보도 기각했음을 보여주지만, endpoint anticipation과 실제 device callback live rerun은 아직 남아 있다.</p>
+      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk 및 session token cap 후보도 기각했음을 보여주지만, endpoint anticipation과 실제 device callback live rerun은 아직 남아 있다.</p>
     </div>
     <ol>
       <li><strong>실제 live rerun:</strong> 10 ms playback callback과 sounddevice low-latency I/O는 API first-audio fixture에 반영되지 않는다. 실제 device callback 기준 로그로 수동 세션을 다시 측정해야 한다.</li>
       <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
+      <li><strong>Session token cap:</strong> 완료. 현재 Realtime GA session update가 <code>session.max_response_output_tokens</code>를 거부하므로 자동 server VAD 응답 경로에서는 적용하지 않는다.</li>
       <li><strong>Speculative endpoint anticipation:</strong> 최신 turn-taking 연구는 endpoint anticipation과 speculative response가 평균 latency를 줄일 수 있음을 시사한다. 다만 correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
       <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
     </ol>
@@ -509,6 +515,7 @@
       <li><a href="../../ref/current-state-2026-06-27.md">Local research snapshot</a></li>
       <li><a href="../../benchmarks/2026-06-27-turn-detection-optimization/">Turn detection optimization notes</a></li>
       <li><a href="../../benchmarks/2026-06-28-input-chunk-sweep/">Input chunk duration sweep</a></li>
+      <li><a href="../../benchmarks/2026-06-28-session-token-cap-probe/">Session token cap probe</a></li>
     </ul>
   </section>
 </main>
