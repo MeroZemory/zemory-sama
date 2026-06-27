@@ -62,6 +62,7 @@ def _event_from_timings(
     server_vad_threshold: float,
     input_chunk_ms: int,
     mode: Mode,
+    local_endpoint_required_misses: int | None,
     audio_end_at: float,
     speech_stopped_at: float | None,
     first_audio_at: float,
@@ -86,6 +87,7 @@ def _event_from_timings(
         "turn_detection": turn_detection,
         "server_vad_threshold": server_vad_threshold,
         "input_chunk_ms": input_chunk_ms,
+        "local_endpoint_required_misses": local_endpoint_required_misses,
         "interrupted": False,
         "early_cutoff": early_cutoff,
         "sample_source": f"macos_say_{mode}",
@@ -345,6 +347,7 @@ async def _measure_sample(
     turn_detection: TurnDetection,
     server_vad_threshold: float,
     server_vad_silence_ms: int,
+    local_endpoint_required_misses: int,
     input_chunk_ms: int,
     mode: Mode,
     timeout_s: float,
@@ -359,6 +362,7 @@ async def _measure_sample(
     cfg.settings.realtime.turn_detection = turn_detection
     cfg.settings.realtime.server_vad_threshold = server_vad_threshold
     cfg.settings.realtime.server_vad_silence_duration_ms = server_vad_silence_ms
+    cfg.settings.realtime.local_endpoint_required_misses = local_endpoint_required_misses
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
     manual_turn = None
@@ -437,6 +441,11 @@ async def _measure_sample(
         server_vad_threshold=server_vad_threshold,
         input_chunk_ms=input_chunk_ms,
         mode=mode,
+        local_endpoint_required_misses=(
+            local_endpoint_required_misses
+            if mode == "local_endpoint_commit"
+            else None
+        ),
         audio_end_at=audio_end_at,
         speech_stopped_at=speech_stopped_at,
         first_audio_at=first_audio_at,
@@ -466,6 +475,7 @@ async def _run(args: argparse.Namespace) -> None:
                     turn_detection=args.turn_detection,
                     server_vad_threshold=args.server_vad_threshold,
                     server_vad_silence_ms=args.server_vad_silence_ms,
+                    local_endpoint_required_misses=args.local_endpoint_required_misses,
                     input_chunk_ms=args.input_chunk_ms,
                     mode=args.mode,
                     timeout_s=args.timeout_s,
@@ -487,6 +497,7 @@ async def _run(args: argparse.Namespace) -> None:
         f"semantic_vad eagerness={args.eagerness}; "
         f"server_vad threshold={args.server_vad_threshold}; "
         f"server_vad silence={args.server_vad_silence_ms} ms. "
+        f"local endpoint misses={args.local_endpoint_required_misses}. "
         f"Input chunk={args.input_chunk_ms} ms. "
         f"play_output={args.play_output}. "
         f"{metric_note} "
@@ -521,6 +532,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--server-vad-silence-ms", type=int, default=300)
     parser.add_argument("--server-vad-threshold", type=float, default=0.5)
+    parser.add_argument("--local-endpoint-required-misses", type=int, default=7)
     parser.add_argument("--input-chunk-ms", type=int, default=20)
     parser.add_argument(
         "--play-output",
