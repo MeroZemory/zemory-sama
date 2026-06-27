@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
 
 Mode = Literal["semantic_vad", "forced_commit"]
 Eagerness = Literal["low", "medium", "high", "auto"]
-TurnDetection = Literal["semantic_vad", "server_vad"]
+TurnDetection = Literal["semantic_vad", "server_vad", "none"]
 
 
 @dataclass(frozen=True)
@@ -430,7 +430,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--turn-detection",
-        choices=["semantic_vad", "server_vad"],
+        choices=["semantic_vad", "server_vad", "none"],
         default="semantic_vad",
     )
     parser.add_argument("--server-vad-silence-ms", type=int, default=300)

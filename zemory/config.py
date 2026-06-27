@@ -93,7 +93,7 @@ class RealtimeSession(BaseSettings):
 
     # Fast path: server_vad with a short silence window wins local live fixtures.
     # semantic_vad remains available when more conservative turn-taking is desired.
-    turn_detection: Literal["semantic_vad", "server_vad"] = "server_vad"
+    turn_detection: Literal["semantic_vad", "server_vad", "none"] = "server_vad"
     semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "high"
     server_vad_threshold: float = 0.5
     server_vad_prefix_padding_ms: int = 300
@@ -229,7 +229,9 @@ def build_session_config() -> dict:
     realtime = settings.realtime
     profile = canonical_profile(settings.profile)
 
-    def _turn_detection() -> dict:
+    def _turn_detection() -> dict | None:
+        if realtime.turn_detection == "none":
+            return None
         if realtime.turn_detection == "semantic_vad":
             return {
                 "type": "semantic_vad",
