@@ -13,6 +13,7 @@ from scripts.bench_realtime_audio_fixture import (
     _event_from_timings,
     _measure_sample,
     _parse_args,
+    _source_note,
     _stream_pcm_realtime,
     _stream_pcm_until_local_endpoint,
     _write_live_benchmark_artifacts,
@@ -21,6 +22,52 @@ from scripts.bench_realtime_audio_fixture import (
 
 def test_chunk_pcm_splits_pcm_without_losing_tail() -> None:
     assert list(_chunk_pcm(b"abcdefg", chunk_size=3)) == [b"abc", b"def", b"g"]
+
+
+def test_source_note_records_response_length_without_irrelevant_endpoint_setting() -> None:
+    args = _parse_args(
+        [
+            "--out",
+            "out",
+            "--mode",
+            "semantic_vad",
+            "--turn-detection",
+            "server_vad",
+        ]
+    )
+
+    note = _source_note(
+        args,
+        event_count=8,
+        response_length="one short sentence",
+    )
+
+    assert "response length=one short sentence" in note
+    assert "local endpoint misses" not in note
+
+
+def test_source_note_records_local_endpoint_miss_window() -> None:
+    args = _parse_args(
+        [
+            "--out",
+            "out",
+            "--mode",
+            "local_endpoint_commit",
+            "--turn-detection",
+            "none",
+            "--local-endpoint-required-misses",
+            "14",
+        ]
+    )
+
+    note = _source_note(
+        args,
+        event_count=4,
+        response_length="one short sentence",
+    )
+
+    assert "response length=one short sentence" in note
+    assert "local endpoint misses=14" in note
 
 
 def test_event_from_timings_records_vad_and_model_audio_segments() -> None:

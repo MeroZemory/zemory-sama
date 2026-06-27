@@ -20,6 +20,7 @@ from zemory.providers.llm.openai_realtime import OpenAIRealtimeLLM
 
 def test_default_session_config_is_audio_native_realtime_ga() -> None:
     assert cfg.settings.profile == "realtime_audio"
+    assert cfg.settings.response_length == "one short sentence"
 
     session = cfg.build_session_config()
 
@@ -44,6 +45,7 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
     }
     assert session["audio"]["output"]["voice"] == "marin"
     assert session["reasoning"]["effort"] == "low"
+    assert "one short sentence maximum" in session["instructions"]
     assert "max_response_output_tokens" not in session
     assert "temperature" not in session
     assert "modalities" not in session
