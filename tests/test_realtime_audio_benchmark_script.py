@@ -7,6 +7,8 @@ import pytest
 from scripts.bench_realtime_audio_fixture import (
     _chunk_pcm,
     _event_from_timings,
+    _parse_args,
+    _stream_pcm_realtime,
     _write_live_benchmark_artifacts,
 )
 
@@ -22,6 +24,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
         eagerness="high",
         turn_detection="semantic_vad",
         server_vad_threshold=0.5,
+        input_chunk_ms=10,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=100.25,
@@ -33,6 +36,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
     assert event["eagerness"] == "high"
     assert event["turn_detection"] == "semantic_vad"
     assert event["server_vad_threshold"] == 0.5
+    assert event["input_chunk_ms"] == 10
     assert event["sample_source"] == "macos_say_semantic_vad"
     assert event["total_ms"] == pytest.approx(750.0)
     assert event["vad_wait_ms"] == pytest.approx(250.0)
@@ -46,6 +50,7 @@ def test_event_from_timings_excludes_early_cutoff_from_latency_samples() -> None
         eagerness="high",
         turn_detection="server_vad",
         server_vad_threshold=0.5,
+        input_chunk_ms=20,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=99.5,
@@ -65,6 +70,7 @@ def test_event_from_timings_excludes_speech_stop_before_audio_end() -> None:
         eagerness="high",
         turn_detection="server_vad",
         server_vad_threshold=0.5,
+        input_chunk_ms=20,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=99.7,
@@ -82,6 +88,7 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
         eagerness="high",
         turn_detection="server_vad",
         server_vad_threshold=0.6,
+        input_chunk_ms=20,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=99.5,
@@ -102,3 +109,30 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
     assert '"invalid_latency_count": 1' in summary
     assert '"early_cutoff_count": 1' in summary
     assert "No valid latency samples" in readme
+
+
+def test_parse_args_accepts_input_chunk_ms() -> None:
+    args = _parse_args(["--out", "out", "--input-chunk-ms", "10"])
+
+    assert args.input_chunk_ms == 10
+
+
+async def test_stream_pcm_realtime_uses_requested_chunk_duration() -> None:
+    class FakeLLM:
+        def __init__(self) -> None:
+            self.chunks: list[bytes] = []
+
+        async def push_audio(self, chunk: bytes) -> None:
+            self.chunks.append(chunk)
+
+    llm = FakeLLM()
+
+    await _stream_pcm_realtime(
+        llm,
+        b"a" * 960,
+        sample_rate=24_000,
+        input_chunk_ms=10,
+        sleep=lambda _duration: None,
+    )
+
+    assert [len(chunk) for chunk in llm.chunks] == [480, 480]
