@@ -23,6 +23,7 @@ from zemory.observability.benchmark_artifacts import write_benchmark_artifacts
 
 Mode = Literal["semantic_vad", "forced_commit"]
 Eagerness = Literal["low", "medium", "high", "auto"]
+TurnDetection = Literal["semantic_vad", "server_vad"]
 
 
 @dataclass(frozen=True)
@@ -58,6 +59,7 @@ def _event_from_timings(
     fixture: str,
     voice: str,
     eagerness: Eagerness,
+    turn_detection: TurnDetection,
     mode: Mode,
     audio_end_at: float,
     speech_stopped_at: float | None,
@@ -69,6 +71,7 @@ def _event_from_timings(
         "voice": voice,
         "profile": "realtime_audio",
         "eagerness": eagerness,
+        "turn_detection": turn_detection,
         "interrupted": False,
         "sample_source": f"macos_say_{mode}",
         "total_ms": round((first_audio_at - audio_end_at) * 1000, 1),
@@ -162,6 +165,8 @@ async def _measure_sample(
     pcm: bytes,
     *,
     eagerness: Eagerness,
+    turn_detection: TurnDetection,
+    server_vad_silence_ms: int,
     mode: Mode,
     timeout_s: float,
 ) -> dict[str, float | str | bool | None]:
@@ -170,7 +175,8 @@ async def _measure_sample(
 
     cfg.settings.profile = "realtime_audio"
     cfg.settings.realtime.semantic_vad_eagerness = eagerness
-    cfg.settings.realtime.turn_detection = "semantic_vad"
+    cfg.settings.realtime.turn_detection = turn_detection
+    cfg.settings.realtime.server_vad_silence_duration_ms = server_vad_silence_ms
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
     await llm.open_session()
@@ -193,6 +199,7 @@ async def _measure_sample(
         fixture=sample.name,
         voice=sample.voice,
         eagerness=eagerness,
+        turn_detection=turn_detection,
         mode=mode,
         audio_end_at=audio_end_at,
         speech_stopped_at=speech_stopped_at,
@@ -218,6 +225,8 @@ async def _run(args: argparse.Namespace) -> None:
                     sample,
                     rendered[sample.name],
                     eagerness=args.eagerness,
+                    turn_detection=args.turn_detection,
+                    server_vad_silence_ms=args.server_vad_silence_ms,
                     mode=args.mode,
                     timeout_s=args.timeout_s,
                 )
@@ -227,7 +236,9 @@ async def _run(args: argparse.Namespace) -> None:
 
     source_note = (
         f"{len(events)} macOS say fixtures streamed as realtime 24 kHz PCM. "
-        f"Mode={args.mode}; semantic_vad eagerness={args.eagerness}. "
+        f"Mode={args.mode}; turn_detection={args.turn_detection}; "
+        f"semantic_vad eagerness={args.eagerness}; "
+        f"server_vad silence={args.server_vad_silence_ms} ms. "
         "Metric is final source-audio chunk sent to first response audio delta; "
         "raw transcripts are not recorded."
     )
@@ -253,6 +264,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["semantic_vad", "forced_commit"],
         default="semantic_vad",
     )
+    parser.add_argument(
+        "--turn-detection",
+        choices=["semantic_vad", "server_vad"],
+        default="semantic_vad",
+    )
+    parser.add_argument("--server-vad-silence-ms", type=int, default=300)
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--timeout-s", type=float, default=15.0)
     parser.add_argument(
