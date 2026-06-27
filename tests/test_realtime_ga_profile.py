@@ -32,7 +32,7 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
     }
     assert session["audio"]["input"]["turn_detection"] == {
         "type": "semantic_vad",
-        "eagerness": "medium",
+        "eagerness": "high",
         "create_response": True,
         "interrupt_response": False,
     }
