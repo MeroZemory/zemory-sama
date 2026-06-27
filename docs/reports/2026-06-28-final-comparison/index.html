@@ -178,8 +178,8 @@
     <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
-      <span class="pill">벤치 구현 기준 commit: <code>4eae645</code></span>
-      <span class="pill">검증: 88 tests, coverage 87.41%</span>
+      <span class="pill">벤치 구현 기준 commit: <code>8ae6045</code></span>
+      <span class="pill">검증: 90 tests, coverage 87.42%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -194,8 +194,8 @@
       <span>forced commit upper-bound n8 p50. 정확한 endpoint를 안다는 가정.</span>
     </div>
     <div class="metric">
-      <strong>2940 ms</strong>
-      <span>local endpoint commit n4 p50. 로컬 VAD 대기 때문에 기각.</span>
+      <strong>1654 ms</strong>
+      <span>tuned local endpoint miss14 n8 p50. 안정적이지만 기본값보다 느려 기각.</span>
     </div>
     <div class="metric">
       <strong>6.5 ms</strong>
@@ -211,7 +211,7 @@
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
     <p>full API-to-device rerun도 완료됐다. 8회 live fixture에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1275.0 ms, representative max 1403.3 ms, outlier 0이었다. API first audio delta에서 speaker callback까지의 추가 비용은 p50 6.5 ms, representative max 9.8 ms라 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
     <p><code>turn_detection=none</code>과 exact endpoint forced commit으로 상한선을 재면 p50 957.0 ms, representative max 1354.2 ms였다. 이는 server_vad full-device p50보다 318.0 ms 빠르지만 실제 앱이 사용자 발화 종료를 정확히 알아야 하므로 기본값이 아니라 endpoint anticipation/local endpoint research 후보로 둔다.</p>
-    <p>로컬 Silero endpoint로 Realtime buffer를 수동 commit하는 실제 경로도 구현하고 live fixture로 검증했다. 그러나 n4 p50은 2940.3 ms, representative max는 3255.7 ms였고, 그중 로컬 VAD 대기만 p50 2034.6 ms였다. 따라서 이 구현은 기본값이나 최적 경로가 아니라 기각한 비교군으로 남긴다.</p>
+    <p>로컬 Silero endpoint로 Realtime buffer를 수동 commit하는 실제 경로도 구현하고 튜닝했다. 기존 two-stage local VAD는 n4 p50 2940.3 ms였고, endpoint 전용 miss window를 줄인 뒤 miss14 안정 후보는 n8 p50 1654.2 ms였다. 하지만 기본 server_vad full-device n8 p50 1275.0 ms보다 느리고, miss10은 2/4 early cutoff가 발생해 기본값으로 채택하지 않았다.</p>
     <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
   </section>
 
@@ -300,13 +300,13 @@
           <td class="status-warn">정확한 endpoint를 안다는 상한선. default 아님.</td>
         </tr>
         <tr>
-          <td><a href="../../benchmarks/2026-06-28-local-endpoint-device-playback-n4/">Local endpoint commit n4</a></td>
-          <td class="num">4</td>
-          <td class="num">2940.3 ms</td>
-          <td class="num">3255.7 ms</td>
-          <td class="num">3255.7 ms</td>
+          <td><a href="../../benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8/">Local endpoint miss14 n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1654.2 ms</td>
+          <td class="num">2043.5 ms</td>
+          <td class="num">2043.5 ms</td>
           <td class="num">0</td>
-          <td class="status-bad">로컬 VAD wait p50 2034.6 ms. reject.</td>
+          <td class="status-warn">튜닝 후 안정적이나 server_vad보다 느림. reject.</td>
         </tr>
         <tr>
           <td><a href="../../benchmarks/2026-06-27-server-vad-200-n8/">server_vad 200 ms n8</a></td>
@@ -484,35 +484,67 @@
       <figcaption>forced commit removes the server VAD wait, but correctness depends on endpoint prediction quality.</figcaption>
     </figure>
 
-    <h3>Local endpoint commit rejection</h3>
-    <p>Realtime 수동 commit 경로는 앱에 실제로 연결했고 live benchmark도 통과했다. 다만 현재 로컬 Silero endpoint는 발화 종료 이후 추가 silence를 약 2초 기다리므로, exact forced commit의 장점을 실현하지 못했다.</p>
+    <h3>Local endpoint commit tuning</h3>
+    <p>Realtime 수동 commit 경로는 앱에 실제로 연결했고, local endpoint state machine도 one-stage endpoint용으로 바꿔 재측정했다. 공격적인 miss10은 빠른 valid sample을 만들지만 2/4 early cutoff로 탈락했다. 안정 후보 miss12/miss14는 early cutoff가 없었으나 기본 server_vad보다 느렸다.</p>
     <table>
       <thead>
         <tr>
           <th>Run</th>
-          <th class="num">Samples</th>
+          <th class="num">Valid / total</th>
           <th class="num">Device p50</th>
           <th class="num">Representative max</th>
           <th class="num">Local VAD wait p50</th>
           <th class="num">Model after endpoint p50</th>
+          <th class="num">Early cutoffs</th>
           <th>Decision</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td><a href="../../benchmarks/2026-06-28-local-endpoint-device-playback-n4/">Local endpoint device playback n4</a></td>
-          <td class="num">4</td>
+          <td><a href="../../benchmarks/2026-06-28-local-endpoint-device-playback-n4/">Two-stage local endpoint baseline</a></td>
+          <td class="num">4 / 4</td>
           <td class="num">2940.3 ms</td>
           <td class="num">3255.7 ms</td>
           <td class="num">2034.6 ms</td>
           <td class="num">889.5 ms</td>
-          <td class="status-bad">Rejected; too slow for default path.</td>
+          <td class="num">0</td>
+          <td class="status-bad">Rejected; too slow.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-local-endpoint-miss10-device-playback-n4/">One-stage local endpoint miss10</a></td>
+          <td class="num">2 / 4</td>
+          <td class="num">1309.2 ms</td>
+          <td class="num">1389.9 ms</td>
+          <td class="num">-1239.7 ms</td>
+          <td class="num">1023.7 ms</td>
+          <td class="num">2</td>
+          <td class="status-bad">Rejected; early cutoff.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-local-endpoint-miss12-device-playback-n4/">One-stage local endpoint miss12</a></td>
+          <td class="num">4 / 4</td>
+          <td class="num">1832.1 ms</td>
+          <td class="num">1906.2 ms</td>
+          <td class="num">592.5 ms</td>
+          <td class="num">976.4 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">Stable but slower than default.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8/">One-stage local endpoint miss14</a></td>
+          <td class="num">8 / 8</td>
+          <td class="num">1654.2 ms</td>
+          <td class="num">2043.5 ms</td>
+          <td class="num">508.6 ms</td>
+          <td class="num">1020.0 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">Best stable local endpoint probe; still rejected.</td>
         </tr>
       </tbody>
     </table>
     <figure>
       <img src="local-endpoint-rejection.svg" alt="Local endpoint rejection benchmark SVG">
-      <figcaption>로컬 endpoint commit은 기술적으로 가능하지만, 현재 detector가 forced commit 상한선보다 훨씬 느리다.</figcaption>
+      <figcaption>로컬 endpoint commit은 기술적으로 가능하고 튜닝으로 빨라졌지만, 안정 후보는 아직 server_vad 기본값보다 느리다.</figcaption>
     </figure>
   </section>
 
@@ -614,7 +646,7 @@
         <tr>
           <td>Manual commit path</td>
           <td><code>turn_detection=none</code> + local endpoint commit implemented, but not default</td>
-          <td>exact forced commit n8 p50은 957.0 ms지만, current local endpoint n4 p50은 2940.3 ms라 채택하지 않는다.</td>
+          <td>exact forced commit n8 p50은 957.0 ms지만, best stable local endpoint probe는 n8 p50 1654.2 ms라 채택하지 않는다.</td>
         </tr>
         <tr>
           <td>Outlier policy</td>
@@ -655,7 +687,7 @@
       <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
       <li><strong>Session token cap:</strong> 완료. 현재 Realtime GA session update가 <code>session.max_response_output_tokens</code>를 거부하므로 자동 server VAD 응답 경로에서는 적용하지 않는다.</li>
       <li><strong>Forced commit upper bound:</strong> 완료. <code>turn_detection=none</code> exact endpoint n8은 p50 957.0 ms로 server_vad full-device n8보다 318.0 ms 빠르다.</li>
-      <li><strong>Local endpoint commit:</strong> 완료 후 기각. current Silero endpoint n4는 p50 2940.3 ms이고 로컬 VAD wait p50이 2034.6 ms라 default 후보가 아니다.</li>
+      <li><strong>Local endpoint commit:</strong> 완료 후 기각. endpoint 전용 one-stage state machine으로 miss14 n8 p50 1654.2 ms, representative max 2043.5 ms, early cutoff 0을 만들었지만 server_vad p50 1275.0 ms보다 느리고, miss10은 2/4 early cutoff였다.</li>
       <li><strong>Speculative endpoint anticipation:</strong> 2026-06-11 Endpoint Anticipation 연구는 평균 505 ms latency 감소와 28.4% speculative computation 증가를 보고한다. forced commit 결과와 방향이 맞지만, correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
       <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
     </ol>
@@ -681,6 +713,10 @@
       <li><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live API-to-device playback benchmark n8</a></li>
       <li><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device playback benchmark n8</a></li>
       <li><a href="../../benchmarks/2026-06-28-local-endpoint-device-playback-n4/">Local endpoint device playback benchmark n4</a></li>
+      <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss10-device-playback-n4/">Local endpoint miss10 benchmark n4</a></li>
+      <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss12-device-playback-n4/">Local endpoint miss12 benchmark n4</a></li>
+      <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n4/">Local endpoint miss14 benchmark n4</a></li>
+      <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8/">Local endpoint miss14 benchmark n8</a></li>
     </ul>
   </section>
 </main>

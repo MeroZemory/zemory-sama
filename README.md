@@ -64,7 +64,7 @@ Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/re
 | Optimized live fixture | 4 Korean/English macOS `say` clips, server VAD 200 ms | source-audio end to first response audio p50 1051.5 ms, representative max 1350.5 ms, no outliers | [docs/benchmarks/2026-06-27-optimized-server-vad-200](docs/benchmarks/2026-06-27-optimized-server-vad-200) |
 | Live device playback | 8 Korean/English macOS `say` clips, server VAD 200 ms, speaker callback enabled | source-audio end to first local speaker playback p50 1275.0 ms, representative max 1403.3 ms; API to playback p50 6.5 ms | [docs/benchmarks/2026-06-28-live-device-playback-n8](docs/benchmarks/2026-06-28-live-device-playback-n8) |
 | Forced commit upper bound | 8 Korean/English macOS `say` clips, `turn_detection=none`, exact endpoint commit | source-audio end to first local speaker playback p50 957.0 ms, representative max 1354.2 ms; experimental upper bound only | [docs/benchmarks/2026-06-28-forced-commit-device-playback-n8](docs/benchmarks/2026-06-28-forced-commit-device-playback-n8) |
-| Local endpoint commit | 4 Korean/English macOS `say` clips, local Silero endpoint, manual Realtime commit | source-audio end to first local speaker playback p50 2940.3 ms; local VAD wait p50 2034.6 ms; rejected | [docs/benchmarks/2026-06-28-local-endpoint-device-playback-n4](docs/benchmarks/2026-06-28-local-endpoint-device-playback-n4) |
+| Local endpoint commit | 8 Korean/English macOS `say` clips, tuned local Silero endpoint miss14, manual Realtime commit | source-audio end to first local speaker playback p50 1654.2 ms; no early cutoffs; stable but slower than default and rejected | [docs/benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8](docs/benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8) |
 | VAD stability sweep | 8 Korean/English macOS `say` clips, server VAD 200 ms | p50 1240.0 ms, representative max 1509.0 ms, 1 extreme outlier retained as diagnostic | [docs/benchmarks/2026-06-27-server-vad-200-n8](docs/benchmarks/2026-06-27-server-vad-200-n8) |
 | Manual live session | 28 real conversation turns | turn p50 816.0 ms, representative max 1698.0 ms, 1 extreme outlier kept as diagnostic | [docs/benchmarks/2026-06-27-local-manual](docs/benchmarks/2026-06-27-local-manual) |
 | Controlled audio samples | 6 Korean/English macOS `say` clips | input commit to first audio p50 920.4 ms, representative max 1202.8 ms | [docs/benchmarks/2026-06-27-controlled-say](docs/benchmarks/2026-06-27-controlled-say) |
@@ -77,7 +77,7 @@ Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/re
 
 ![Forced commit device playback latency](docs/benchmarks/2026-06-28-forced-commit-device-playback-n8/latency.svg)
 
-![Local endpoint commit latency](docs/benchmarks/2026-06-28-local-endpoint-device-playback-n4/latency.svg)
+![Local endpoint commit latency](docs/benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8/latency.svg)
 
 ![Speaker output callback latency](docs/benchmarks/2026-06-28-speaker-output-callback/latency.svg)
 
@@ -239,7 +239,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 88 tests passing.
+- 90 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 87%.
 
