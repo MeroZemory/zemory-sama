@@ -52,3 +52,19 @@ def test_event_from_timings_excludes_early_cutoff_from_latency_samples() -> None
     assert event["total_ms"] is None
     assert event["first_tts_byte_ms"] is None
     assert event["first_audio_after_speech_stopped_ms"] == pytest.approx(400.0)
+
+
+def test_event_from_timings_excludes_speech_stop_before_audio_end() -> None:
+    event = _event_from_timings(
+        fixture="en_short",
+        voice="Samantha",
+        eagerness="high",
+        turn_detection="server_vad",
+        mode="semantic_vad",
+        audio_end_at=100.0,
+        speech_stopped_at=99.7,
+        first_audio_at=100.2,
+    )
+
+    assert event["early_cutoff"] is True
+    assert event["total_ms"] is None
