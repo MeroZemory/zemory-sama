@@ -178,8 +178,8 @@
     <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
-      <span class="pill">성능 기준 commit: <code>52e6646</code></span>
-      <span class="pill">검증: 79 tests, coverage 86.64%</span>
+      <span class="pill">성능 기준 commit: <code>0b51b96</code></span>
+      <span class="pill">검증: 80 tests, coverage 86.94%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -190,16 +190,16 @@
       <span>수동 live 세션 28턴 p50. 실제 대화 로그에서 추출한 로컬 측정값.</span>
     </div>
     <div class="metric">
-      <strong>1051.5 ms</strong>
-      <span>최적화 후 macOS say live fixture p50. server_vad 200 ms, 4 samples.</span>
+      <strong>1275 ms</strong>
+      <span>n8 full API-to-device p50. 첫 로컬 speaker playback callback 기준.</span>
     </div>
     <div class="metric">
-      <strong>1509 ms</strong>
-      <span>server_vad 200 ms n8 stability sweep의 representative max.</span>
+      <strong>1403.3 ms</strong>
+      <span>n8 full API-to-device representative max. severe outlier 없음.</span>
     </div>
     <div class="metric">
-      <strong>7.404 ms</strong>
-      <span>로컬 SpeakerStream queue to first playback callback p50. representative max 8.326 ms.</span>
+      <strong>6.5 ms</strong>
+      <span>Realtime API first audio delta에서 로컬 playback callback까지의 p50.</span>
     </div>
   </section>
 
@@ -209,7 +209,7 @@
       <p><strong>현재 기본값은 유지한다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 20 ms input chunk, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
     </div>
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
-    <p>10 ms speaker callback 최적화는 실제 로컬 출력 경로에서도 확인됐다. 24회 샘플에서 queue insertion부터 첫 non-zero playback callback까지 p50 7.404 ms, representative max 8.326 ms, outlier 0이었다.</p>
+    <p>full API-to-device rerun도 완료됐다. 8회 live fixture에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1275.0 ms, representative max 1403.3 ms, outlier 0이었다. API first audio delta에서 speaker callback까지의 추가 비용은 p50 6.5 ms, representative max 9.8 ms라 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
     <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
   </section>
 
@@ -277,6 +277,15 @@
           <td class="num">1350.5 ms</td>
           <td class="num">0</td>
           <td class="status-good">초기 최적화 후 기준 run.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live device playback n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1275.0 ms</td>
+          <td class="num">1403.3 ms</td>
+          <td class="num">1403.3 ms</td>
+          <td class="num">0</td>
+          <td class="status-good">API-to-device callback 기준 full rerun.</td>
         </tr>
         <tr>
           <td><a href="../../benchmarks/2026-06-27-server-vad-200-n8/">server_vad 200 ms n8</a></td>
@@ -393,6 +402,37 @@
       <img src="speaker-output-callback.svg" alt="Speaker output callback benchmark SVG">
       <figcaption>스피커 출력 microbench는 API/network latency를 제외하고 로컬 callback 대기만 측정한다.</figcaption>
     </figure>
+
+    <h3>Full API-to-device playback rerun</h3>
+    <p>새 <code>--play-output</code> live fixture는 Realtime <code>audio.delta</code>를 실제 <code>SpeakerStream</code>으로 보내고 첫 non-zero playback callback을 headline latency로 기록한다. n8에서 total p50은 1275.0 ms였고, API first-audio p50 1267.9 ms와의 차이는 6.5 ms였다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th class="num">Samples</th>
+          <th class="num">Device p50</th>
+          <th class="num">Device representative max</th>
+          <th class="num">API first audio p50</th>
+          <th class="num">API to playback p50</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live device playback n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1275.0 ms</td>
+          <td class="num">1403.3 ms</td>
+          <td class="num">1267.9 ms</td>
+          <td class="num">6.5 ms</td>
+          <td class="status-good">Playback path is no longer the bottleneck.</td>
+        </tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="live-device-playback.svg" alt="Live API to device playback benchmark SVG">
+      <figcaption>full rerun은 API/network/model/VAD와 local speaker callback을 같은 측정선에 둔다.</figcaption>
+    </figure>
   </section>
 
   <section>
@@ -507,8 +547,8 @@
         </tr>
         <tr>
           <td>Playback</td>
-          <td>10 ms output callback, local speaker output p50 7.404 ms</td>
-          <td>buffer write가 아니라 실제 callback 소비 시각을 측정한다. 24-sample microbench에서 representative max 8.326 ms, outlier 0.</td>
+          <td>10 ms output callback, API-to-device added p50 6.5 ms</td>
+          <td>full live n8에서 API first-audio delta부터 speaker callback까지 representative max 9.8 ms, outlier 0.</td>
         </tr>
         <tr>
           <td>Device I/O</td>
@@ -522,13 +562,13 @@
   <section>
     <h2>6. 남은 병목과 다음 실험</h2>
     <div class="warning">
-      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk, session token cap, standalone speaker callback 후보를 검증했음을 보여준다. 다만 full live API-to-device rerun과 endpoint anticipation은 아직 남아 있다.</p>
+      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk, session token cap, standalone speaker callback, full API-to-device callback 후보를 검증했음을 보여준다. 남은 고위험 후보는 speculative endpoint anticipation이다.</p>
     </div>
     <ol>
-      <li><strong>실제 live rerun:</strong> standalone speaker callback은 p50 7.404 ms로 확인됐다. 다음은 실제 대화/API 응답까지 포함한 device callback 기준 수동 세션 재측정이다.</li>
+      <li><strong>Full live API-to-device rerun:</strong> 완료. n8 p50 1275.0 ms, representative max 1403.3 ms, API-to-playback p50 6.5 ms.</li>
       <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
       <li><strong>Session token cap:</strong> 완료. 현재 Realtime GA session update가 <code>session.max_response_output_tokens</code>를 거부하므로 자동 server VAD 응답 경로에서는 적용하지 않는다.</li>
-      <li><strong>Speculative endpoint anticipation:</strong> 최신 turn-taking 연구는 endpoint anticipation과 speculative response가 평균 latency를 줄일 수 있음을 시사한다. 다만 correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
+      <li><strong>Speculative endpoint anticipation:</strong> 2026-06-11 Endpoint Anticipation 연구는 평균 505 ms latency 감소와 28.4% speculative computation 증가를 보고한다. correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
       <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
     </ol>
   </section>
@@ -543,12 +583,14 @@
       <li><a href="https://github.com/livekit/agents/blob/main/livekit-agents/livekit/agents/inference/eot/base.py">LiveKit EOT detector source</a></li>
       <li><a href="https://python-sounddevice.readthedocs.io/en/latest/api/streams.html">python-sounddevice stream API documentation</a></li>
       <li><a href="https://arxiv.org/html/2604.01897v1">FastTurn</a></li>
+      <li><a href="https://arxiv.org/abs/2606.13450">Endpoint Anticipation for Low-Latency Spoken Dialogue</a></li>
       <li><a href="https://arxiv.org/html/2503.04721v3">FD-Bench</a></li>
       <li><a href="../../ref/current-state-2026-06-27.md">Local research snapshot</a></li>
       <li><a href="../../benchmarks/2026-06-27-turn-detection-optimization/">Turn detection optimization notes</a></li>
       <li><a href="../../benchmarks/2026-06-28-input-chunk-sweep/">Input chunk duration sweep</a></li>
       <li><a href="../../benchmarks/2026-06-28-session-token-cap-probe/">Session token cap probe</a></li>
       <li><a href="../../benchmarks/2026-06-28-speaker-output-callback/">Speaker output callback benchmark</a></li>
+      <li><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live API-to-device playback benchmark n8</a></li>
     </ul>
   </section>
 </main>
