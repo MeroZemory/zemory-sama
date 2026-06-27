@@ -65,11 +65,18 @@ def _event_from_timings(
     audio_end_at: float,
     speech_stopped_at: float | None,
     first_audio_at: float,
+    first_speaker_write_at: float | None = None,
+    first_playback_at: float | None = None,
 ) -> dict[str, float | str | bool | None]:
+    metric_at = first_playback_at or first_audio_at
     early_cutoff = first_audio_at < audio_end_at or (
         speech_stopped_at is not None and speech_stopped_at < audio_end_at
     )
-    total_ms = None if early_cutoff else round((first_audio_at - audio_end_at) * 1000, 1)
+    total_ms = None if early_cutoff else round((metric_at - audio_end_at) * 1000, 1)
+    api_first_audio_ms = (
+        None if first_audio_at < audio_end_at
+        else round((first_audio_at - audio_end_at) * 1000, 1)
+    )
     event = {
         "event": "turn.complete",
         "fixture": fixture,
@@ -82,10 +89,14 @@ def _event_from_timings(
         "interrupted": False,
         "early_cutoff": early_cutoff,
         "sample_source": f"macos_say_{mode}",
+        "metric_target": "device_playback" if first_playback_at is not None else "api_first_audio",
+        "api_first_audio_ms": api_first_audio_ms,
         "total_ms": total_ms,
-        "first_tts_byte_ms": total_ms,
+        "first_tts_byte_ms": None if total_ms is None else api_first_audio_ms,
         "vad_wait_ms": None,
         "first_audio_after_speech_stopped_ms": None,
+        "api_to_playback_ms": None,
+        "speaker_buffer_ms": None,
     }
     if speech_stopped_at is not None:
         event["vad_wait_ms"] = round((speech_stopped_at - audio_end_at) * 1000, 1)
@@ -93,6 +104,13 @@ def _event_from_timings(
             (first_audio_at - speech_stopped_at) * 1000,
             1,
         )
+    if first_playback_at is not None:
+        event["api_to_playback_ms"] = round((first_playback_at - first_audio_at) * 1000, 1)
+        if first_speaker_write_at is not None:
+            event["speaker_buffer_ms"] = round(
+                (first_playback_at - first_speaker_write_at) * 1000,
+                1,
+            )
     return event
 
 
@@ -220,17 +238,36 @@ async def _send_silence(llm, *, sample_rate: int, duration_s: float) -> None:
         await asyncio.sleep(chunk_duration_s)
 
 
-async def _wait_for_first_audio(llm, *, timeout_s: float) -> tuple[float | None, float]:
+async def _wait_for_first_audio(
+    llm,
+    *,
+    timeout_s: float,
+    speaker=None,
+) -> tuple[float | None, float, float | None, float | None]:
     speech_stopped_at: float | None = None
 
-    async def consume() -> tuple[float | None, float]:
+    async def consume() -> tuple[float | None, float, float | None, float | None]:
         nonlocal speech_stopped_at
         async for event in llm.events():
             event_type = event.get("type")
             if event_type == "input.speech_stopped" and speech_stopped_at is None:
                 speech_stopped_at = time.monotonic()
             elif event_type == "audio.delta":
-                return speech_stopped_at, time.monotonic()
+                first_audio_at = time.monotonic()
+                if speaker is None:
+                    return speech_stopped_at, first_audio_at, None, None
+                await speaker.queue.put(event["audio"])
+                deadline = first_audio_at + timeout_s
+                while speaker.first_play_at is None:
+                    if time.monotonic() > deadline:
+                        raise TimeoutError("speaker playback callback did not consume audio")
+                    await asyncio.sleep(0.001)
+                return (
+                    speech_stopped_at,
+                    first_audio_at,
+                    speaker.first_write_at,
+                    speaker.first_play_at,
+                )
             elif event_type == "error":
                 raise RuntimeError(str(event.get("error")))
         raise RuntimeError("Realtime event stream ended before audio")
@@ -249,6 +286,7 @@ async def _measure_sample(
     input_chunk_ms: int,
     mode: Mode,
     timeout_s: float,
+    play_output: bool,
 ) -> dict[str, float | str | bool | None]:
     from zemory import config as cfg
     from zemory.providers.llm.openai_realtime import OpenAIRealtimeLLM
@@ -260,9 +298,20 @@ async def _measure_sample(
     cfg.settings.realtime.server_vad_silence_duration_ms = server_vad_silence_ms
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
+    speaker = None
+    feed_task: asyncio.Task | None = None
+    if play_output:
+        from zemory.audio import SpeakerStream
+
+        speaker = SpeakerStream(asyncio.get_running_loop())
+        speaker.start()
+        speaker.arm()
+        feed_task = asyncio.create_task(speaker.feed())
     await llm.open_session()
     try:
-        waiter = asyncio.create_task(_wait_for_first_audio(llm, timeout_s=timeout_s))
+        waiter = asyncio.create_task(
+            _wait_for_first_audio(llm, timeout_s=timeout_s, speaker=speaker)
+        )
         audio_end_at = await _stream_pcm_realtime(
             llm,
             pcm,
@@ -277,9 +326,22 @@ async def _measure_sample(
             await llm.trigger_response()
         else:
             await _send_silence(llm, sample_rate=cfg.SAMPLE_RATE, duration_s=1.6)
-        speech_stopped_at, first_audio_at = await waiter
+        (
+            speech_stopped_at,
+            first_audio_at,
+            first_speaker_write_at,
+            first_playback_at,
+        ) = await waiter
     finally:
         await llm.close()
+        if feed_task is not None:
+            feed_task.cancel()
+            try:
+                await feed_task
+            except asyncio.CancelledError:
+                pass
+        if speaker is not None:
+            speaker.stop()
 
     return _event_from_timings(
         fixture=sample.name,
@@ -292,6 +354,8 @@ async def _measure_sample(
         audio_end_at=audio_end_at,
         speech_stopped_at=speech_stopped_at,
         first_audio_at=first_audio_at,
+        first_speaker_write_at=first_speaker_write_at,
+        first_playback_at=first_playback_at,
     )
 
 
@@ -319,11 +383,18 @@ async def _run(args: argparse.Namespace) -> None:
                     input_chunk_ms=args.input_chunk_ms,
                     mode=args.mode,
                     timeout_s=args.timeout_s,
+                    play_output=args.play_output,
                 )
                 event["trial"] = trial + 1
                 events.append(event)
                 print(event, flush=True)
 
+    metric_note = (
+        "Metric is final source-audio chunk sent to first local speaker playback callback; "
+        "api_first_audio_ms retains the API first-audio delta timestamp."
+        if args.play_output
+        else "Metric is final source-audio chunk sent to first response audio delta."
+    )
     source_note = (
         f"{len(events)} macOS say fixtures streamed as realtime 24 kHz PCM. "
         f"Mode={args.mode}; turn_detection={args.turn_detection}; "
@@ -331,7 +402,8 @@ async def _run(args: argparse.Namespace) -> None:
         f"server_vad threshold={args.server_vad_threshold}; "
         f"server_vad silence={args.server_vad_silence_ms} ms. "
         f"Input chunk={args.input_chunk_ms} ms. "
-        "Metric is final source-audio chunk sent to first response audio delta; "
+        f"play_output={args.play_output}. "
+        f"{metric_note} "
         "raw transcripts are not recorded."
     )
     _write_live_benchmark_artifacts(
@@ -364,6 +436,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--server-vad-silence-ms", type=int, default=300)
     parser.add_argument("--server-vad-threshold", type=float, default=0.5)
     parser.add_argument("--input-chunk-ms", type=int, default=20)
+    parser.add_argument(
+        "--play-output",
+        action="store_true",
+        help="Route the first response audio delta through SpeakerStream and measure playback.",
+    )
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--timeout-s", type=float, default=15.0)
     parser.add_argument(
