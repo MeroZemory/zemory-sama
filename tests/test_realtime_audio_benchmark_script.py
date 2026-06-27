@@ -41,6 +41,31 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
     assert event["total_ms"] == pytest.approx(750.0)
     assert event["vad_wait_ms"] == pytest.approx(250.0)
     assert event["first_audio_after_speech_stopped_ms"] == pytest.approx(500.0)
+    assert event["metric_target"] == "api_first_audio"
+
+
+def test_event_from_timings_can_measure_device_playback() -> None:
+    event = _event_from_timings(
+        fixture="ko_short",
+        voice="Yuna",
+        eagerness="high",
+        turn_detection="server_vad",
+        server_vad_threshold=0.5,
+        input_chunk_ms=20,
+        mode="semantic_vad",
+        audio_end_at=100.0,
+        speech_stopped_at=100.2,
+        first_audio_at=100.7,
+        first_speaker_write_at=100.701,
+        first_playback_at=100.709,
+    )
+
+    assert event["metric_target"] == "device_playback"
+    assert event["total_ms"] == pytest.approx(709.0)
+    assert event["first_tts_byte_ms"] == pytest.approx(700.0)
+    assert event["api_first_audio_ms"] == pytest.approx(700.0)
+    assert event["api_to_playback_ms"] == pytest.approx(9.0)
+    assert event["speaker_buffer_ms"] == pytest.approx(8.0)
 
 
 def test_event_from_timings_excludes_early_cutoff_from_latency_samples() -> None:
@@ -111,10 +136,11 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
     assert "No valid latency samples" in readme
 
 
-def test_parse_args_accepts_input_chunk_ms() -> None:
-    args = _parse_args(["--out", "out", "--input-chunk-ms", "10"])
+def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
+    args = _parse_args(["--out", "out", "--input-chunk-ms", "10", "--play-output"])
 
     assert args.input_chunk_ms == 10
+    assert args.play_output is True
 
 
 async def test_stream_pcm_realtime_uses_requested_chunk_duration() -> None:
