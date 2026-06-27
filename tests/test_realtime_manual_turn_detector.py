@@ -6,7 +6,10 @@ import asyncio
 
 import pytest
 
-from zemory.providers.turn.realtime_manual import RealtimeManualTurnDetector
+from zemory.providers.turn.realtime_manual import (
+    RealtimeEndpointStateMachine,
+    RealtimeManualTurnDetector,
+)
 
 
 class FakeEndpointDetector:
@@ -35,6 +38,50 @@ class FakeRealtimeLLM:
 
     async def push_audio(self, pcm_bytes: bytes) -> None:
         self.pushed.append(pcm_bytes)
+
+
+def test_realtime_endpoint_state_machine_ends_after_single_miss_window() -> None:
+    sm = RealtimeEndpointStateMachine(
+        prob_threshold=0.5,
+        db_threshold=10.0,
+        required_hits=1,
+        required_misses=2,
+        smoothing_window=1,
+    )
+
+    assert sm.process(0.9, 30.0) == "speech_start"
+    assert sm.process(0.0, 0.0) is None
+    assert sm.process(0.0, 0.0) == "speech_end"
+
+
+@pytest.mark.asyncio
+async def test_realtime_manual_detector_uses_fast_endpoint_state_machine(
+    monkeypatch,
+) -> None:
+    from zemory import config as cfg
+    from zemory.providers.turn import silero
+
+    captured: dict[str, object] = {}
+
+    class FakeSileroTurnDetector:
+        def __init__(self, *, state_machine) -> None:
+            self.events: asyncio.Queue[str] = asyncio.Queue()
+            self.fed: list[bytes] = []
+            captured["state_machine"] = state_machine
+
+        async def feed(self, pcm24k: bytes) -> None:
+            self.fed.append(pcm24k)
+
+    monkeypatch.setattr(cfg.settings.realtime, "local_endpoint_required_misses", 7)
+    monkeypatch.setattr(silero, "SileroTurnDetector", FakeSileroTurnDetector)
+
+    detector = RealtimeManualTurnDetector(llm=FakeRealtimeLLM())
+
+    await detector.feed(b"pcm")
+
+    state_machine = captured["state_machine"]
+    assert isinstance(state_machine, RealtimeEndpointStateMachine)
+    assert state_machine.required_misses == 7
 
 
 @pytest.mark.asyncio
