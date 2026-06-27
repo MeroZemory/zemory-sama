@@ -7,7 +7,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from zemory.observability.latency_report import LatencyReport
+from zemory.observability.latency_report import (
+    LatencyReport,
+    _exclude_extreme_outliers,
+    _percentile_nearest_rank,
+)
+
+SECONDARY_LATENCY_FIELDS = (
+    ("api_first_audio_ms", "api first audio"),
+    ("api_to_playback_ms", "api to playback"),
+    ("speaker_buffer_ms", "speaker buffer"),
+    ("vad_wait_ms", "vad wait"),
+    ("first_audio_after_speech_stopped_ms", "first audio after speech stopped"),
+)
 
 
 @dataclass(frozen=True)
@@ -48,6 +60,7 @@ def write_benchmark_artifacts(
         ),
         "early_cutoff_count": sum(1 for event in events if event.get("early_cutoff")),
         **report.as_dict(),
+        **_secondary_latency_summaries(events),
     }
     summary_json.write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -69,9 +82,57 @@ def _write_jsonl(path: Path, events: list[dict[str, Any]]) -> None:
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 
+def _secondary_latency_summaries(events: list[dict[str, Any]]) -> dict[str, float | int]:
+    summaries: dict[str, float | int] = {}
+    for field, _label in SECONDARY_LATENCY_FIELDS:
+        values = [
+            float(event[field])
+            for event in events
+            if event.get("event") == "turn.complete" and event.get(field) is not None
+        ]
+        if not values:
+            continue
+        ordered = sorted(values)
+        representative = _exclude_extreme_outliers(ordered)
+        prefix = field.removesuffix("_ms")
+        summaries.update(
+            {
+                f"{prefix}_count": len(values),
+                f"{prefix}_min_ms": ordered[0],
+                f"{prefix}_mean_ms": sum(values) / len(values),
+                f"{prefix}_p50_ms": _percentile_nearest_rank(values, 50),
+                f"{prefix}_p90_ms": _percentile_nearest_rank(values, 90),
+                f"{prefix}_p95_ms": _percentile_nearest_rank(values, 95),
+                f"{prefix}_representative_max_ms": representative[-1],
+                f"{prefix}_max_ms": ordered[-1],
+                f"{prefix}_extreme_outlier_count": len(ordered) - len(representative),
+            }
+        )
+    return summaries
+
+
+def _secondary_latency_rows(summary: dict[str, Any]) -> str:
+    rows: list[str] = []
+    for field, label in SECONDARY_LATENCY_FIELDS:
+        prefix = field.removesuffix("_ms")
+        p50_key = f"{prefix}_p50_ms"
+        if p50_key not in summary:
+            continue
+        rows.append(f"| {label} p50 | {summary[p50_key]:.1f} ms |")
+        rows.append(
+            "| "
+            f"{label} representative max | "
+            f"{summary[f'{prefix}_representative_max_ms']:.1f} ms |"
+        )
+    return "\n".join(rows)
+
+
 def _markdown(summary: dict[str, Any]) -> str:
     interrupt_p95 = summary["interrupt_p95_ms"]
     interrupt_value = f"{interrupt_p95:.1f} ms" if interrupt_p95 is not None else "n/a"
+    secondary_rows = _secondary_latency_rows(summary)
+    if secondary_rows:
+        secondary_rows = f"{secondary_rows}\n"
     return f"""# {summary["title"]}
 
 {summary["source_note"]}
@@ -90,7 +151,7 @@ def _markdown(summary: dict[str, Any]) -> str:
 | representative max | {summary["turn_representative_max_ms"]:.1f} ms |
 | extreme outliers | {summary["turn_extreme_outlier_count"]} |
 | observed max, diagnostic | {summary["turn_max_ms"]:.1f} ms |
-| interrupt count | {summary["interrupt_count"]} |
+{secondary_rows}| interrupt count | {summary["interrupt_count"]} |
 | interrupt p95 | {interrupt_value} |
 
 ![Latency chart](latency.svg)
