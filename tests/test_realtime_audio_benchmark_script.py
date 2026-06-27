@@ -291,6 +291,11 @@ async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) ->
     monkeypatch.setattr(cfg.settings.realtime, "server_vad_threshold", cfg.settings.realtime.server_vad_threshold)
     monkeypatch.setattr(
         cfg.settings.realtime,
+        "local_endpoint_required_misses",
+        cfg.settings.realtime.local_endpoint_required_misses,
+    )
+    monkeypatch.setattr(
+        cfg.settings.realtime,
         "server_vad_silence_duration_ms",
         cfg.settings.realtime.server_vad_silence_duration_ms,
     )

@@ -99,7 +99,7 @@ class RealtimeSession(BaseSettings):
     server_vad_prefix_padding_ms: int = 300
     server_vad_silence_duration_ms: int = 200
     server_vad_idle_timeout_ms: int | None = None
-    local_endpoint_required_misses: int = 7
+    local_endpoint_required_misses: int = 14
 
     # Local profile: Realtime STT disabled (we inject text)
     transcription_model: str = "gpt-4o-mini-transcribe"
