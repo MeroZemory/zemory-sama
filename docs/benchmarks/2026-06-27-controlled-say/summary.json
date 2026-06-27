@@ -1,8 +1,11 @@
 {
+  "early_cutoff_count": 0,
   "interrupt_count": 0,
   "interrupt_p95_ms": null,
+  "invalid_latency_count": 0,
   "source_note": "Six synthetic Korean/English utterances generated with macOS say, streamed directly as 24 kHz PCM into the OpenAI Realtime adapter. Metric is input-stream end/commit to first response audio delta because synthetic TTS clips do not always trigger semantic_vad speech_stopped. Numeric-only export; no private transcripts.",
   "title": "zemory-sama controlled TTS-audio benchmark",
+  "total_event_count": 6,
   "turn_count": 6,
   "turn_extreme_outlier_count": 0,
   "turn_max_ms": 1202.8,

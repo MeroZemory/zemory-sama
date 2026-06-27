@@ -1,8 +1,11 @@
 {
+  "early_cutoff_count": 0,
   "interrupt_count": 5,
   "interrupt_p95_ms": 1.5,
+  "invalid_latency_count": 0,
   "source_note": "Numeric-only export from local manual realtime_audio runtime logs; raw transcripts are intentionally not committed.",
   "title": "zemory-sama realtime_audio manual benchmark",
+  "total_event_count": 33,
   "turn_count": 28,
   "turn_extreme_outlier_count": 1,
   "turn_max_ms": 7086.8,

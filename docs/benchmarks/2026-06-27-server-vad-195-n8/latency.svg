@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="264" role="img" aria-label="Latency benchmark chart">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <text x="24" y="28" font-size="18" font-weight="700" fill="#111827">zemory-sama latency benchmark</text>
+  <text x="220" y="28" font-size="12" fill="#6b7280">dashed line = release target</text>
+  <text x="24" y="68" font-size="14" fill="#111827">turn p50</text>
+  <rect x="220" y="52" width="242.7" height="22" fill="#b91c1c" rx="3" />
+  <line x1="361.2" x2="361.2" y1="48" y2="80" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4 3" />
+  <text x="472.7" y="68" font-size="13" fill="#111827">1202.8 ms</text>
+  <text x="24" y="116" font-size="14" fill="#111827">turn p90</text>
+  <rect x="220" y="100" width="420.0" height="22" fill="#b91c1c" rx="3" />
+  <line x1="421.7" x2="421.7" y1="96" y2="128" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4 3" />
+  <text x="650.0" y="116" font-size="13" fill="#111827">2081.8 ms</text>
+  <text x="24" y="164" font-size="14" fill="#111827">turn p95</text>
+  <rect x="220" y="148" width="420.0" height="22" fill="#b91c1c" rx="3" />
+  <line x1="462.1" x2="462.1" y1="144" y2="176" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4 3" />
+  <text x="650.0" y="164" font-size="13" fill="#111827">2081.8 ms</text>
+  <text x="24" y="212" font-size="14" fill="#111827">representative max</text>
+  <rect x="220" y="196" width="420.0" height="22" fill="#b91c1c" rx="3" />
+  <line x1="522.6" x2="522.6" y1="192" y2="224" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="4 3" />
+  <text x="650.0" y="212" font-size="13" fill="#111827">2081.8 ms</text>
+</svg>

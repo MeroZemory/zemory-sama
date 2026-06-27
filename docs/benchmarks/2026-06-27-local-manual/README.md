@@ -5,6 +5,9 @@ Numeric-only export from local manual realtime_audio runtime logs; raw transcrip
 | Metric | Value |
 | --- | ---: |
 | turn count | 28 |
+| total events | 33 |
+| invalid latency samples | 0 |
+| early cutoffs | 0 |
 | turn min | 534.9 ms |
 | turn mean | 1086.0 ms |
 | turn p50 | 816.0 ms |

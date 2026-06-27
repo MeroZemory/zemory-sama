@@ -1,0 +1,18 @@
+{
+  "early_cutoff_count": 0,
+  "interrupt_count": 0,
+  "interrupt_p95_ms": null,
+  "invalid_latency_count": 0,
+  "source_note": "2 macOS say fixtures streamed as realtime 24 kHz PCM. Mode=semantic_vad; turn_detection=server_vad; semantic_vad eagerness=high; server_vad threshold=0.5; server_vad silence=194 ms. Metric is final source-audio chunk sent to first response audio delta; raw transcripts are not recorded.",
+  "title": "zemory-sama server_vad 194ms probe",
+  "total_event_count": 2,
+  "turn_count": 2,
+  "turn_extreme_outlier_count": 0,
+  "turn_max_ms": 1149.3,
+  "turn_mean_ms": 1132.6,
+  "turn_min_ms": 1115.9,
+  "turn_p50_ms": 1115.9,
+  "turn_p90_ms": 1149.3,
+  "turn_p95_ms": 1149.3,
+  "turn_representative_max_ms": 1149.3
+}

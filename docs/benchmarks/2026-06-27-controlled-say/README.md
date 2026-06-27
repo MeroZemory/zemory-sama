@@ -5,6 +5,9 @@ Six synthetic Korean/English utterances generated with macOS say, streamed direc
 | Metric | Value |
 | --- | ---: |
 | turn count | 6 |
+| total events | 6 |
+| invalid latency samples | 0 |
+| early cutoffs | 0 |
 | turn min | 819.1 ms |
 | turn mean | 960.9 ms |
 | turn p50 | 920.4 ms |

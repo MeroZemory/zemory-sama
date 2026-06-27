@@ -29,9 +29,29 @@ All rows use macOS `say` fixtures streamed as realtime 24 kHz PCM. Metric is fin
 
 ![Turn detection comparison](turn-detection-comparison.svg)
 
+## Boundary Sweep
+
+After selecting 200 ms, a second pass tested whether the stable window could be pushed lower. These runs use the same generated audio harness. `turn_count` is the number of valid latency samples; early cutoffs are invalid samples where server VAD fired before the source audio finished.
+
+| Candidate | Events | Valid turns | Early cutoffs | p50 | Representative max | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `server_vad` 175 ms, threshold 0.5 | 2 | 1 | 1 | 1290.0 ms | 1290.0 ms | Rejected |
+| `server_vad` 180 ms, threshold 0.5 | 2 | 1 | 1 | 1012.7 ms | 1012.7 ms | Rejected |
+| `server_vad` 180 ms, threshold 0.6 | 2 | 0 | 2 | n/a | n/a | Rejected |
+| `server_vad` 180 ms, threshold 0.7 | 2 | 0 | 2 | n/a | n/a | Rejected |
+| `server_vad` 180 ms, threshold 0.8 | 2 | 0 | 2 | n/a | n/a | Rejected |
+| `server_vad` 190 ms, threshold 0.5 | 2 | 1 | 1 | 1185.2 ms | 1185.2 ms | Rejected |
+| `server_vad` 192 ms, threshold 0.5 | 2 | 1 | 1 | 1073.7 ms | 1073.7 ms | Rejected |
+| `server_vad` 193 ms, threshold 0.5 | 8 | 8 | 0 | 1318.5 ms | 1750.0 ms | Stable but slower tail than 200 ms |
+| `server_vad` 195 ms, threshold 0.5 | 8 | 8 | 0 | 1202.8 ms | 2081.8 ms | Stable but worse tail than 200 ms |
+| `server_vad` 200 ms, threshold 0.5 | 8 | 8 | 0 | 1240.0 ms | 1509.0 ms | Kept as default |
+
+![Boundary sweep](turn-detection-boundary-sweep.svg)
+
 ## Decision
 
-`realtime_audio` now defaults to `server_vad` with `silence_duration_ms=200`.
+`realtime_audio` defaults to `server_vad` with `silence_duration_ms=200`.
+The 193 ms and 195 ms candidates were stable in the larger sweep, but neither improved the representative tail over 200 ms. Windows below 193 ms cut off generated Korean and/or English fixtures before the source audio had finished.
 `semantic_vad` remains configurable for conversations where avoiding early turn endings is more important than minimum latency.
 
 The speaker output callback block size was also lowered from 40 ms to 20 ms so first decoded audio can reach the output device sooner. This is a playback-path improvement and is not reflected in the API first-audio benchmark above.

@@ -1,0 +1,8 @@
+{
+  "early_cutoff_count": 2,
+  "invalid_latency_count": 2,
+  "source_note": "2 macOS say fixtures streamed as realtime 24 kHz PCM. Mode=semantic_vad; turn_detection=server_vad; semantic_vad eagerness=high; server_vad threshold=0.6; server_vad silence=180 ms. Metric is final source-audio chunk sent to first response audio delta; raw transcripts are not recorded.",
+  "title": "zemory-sama server_vad 180ms threshold 0.6 probe",
+  "total_event_count": 2,
+  "turn_count": 0
+}

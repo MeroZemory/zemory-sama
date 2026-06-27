@@ -5,6 +5,9 @@
 | Metric | Value |
 | --- | ---: |
 | turn count | 2 |
+| total events | 2 |
+| invalid latency samples | 0 |
+| early cutoffs | 0 |
 | turn min | 1462.7 ms |
 | turn mean | 1890.4 ms |
 | turn p50 | 1462.7 ms |

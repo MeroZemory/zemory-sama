@@ -10,6 +10,7 @@ OpenAI Realtime GA 기반의 멀티링구얼 음성 에이전트 런타임입니
 
 - 실제 수동 세션 28턴: p50 816 ms, p95 1.70 s
 - 최적화 후 macOS `say` live fixture: source-audio end -> first audio p50 1.05 s, representative max 1.35 s
+- n8 VAD stability sweep: p50 1.24 s, representative max 1.51 s, 5.0 s outlier 1건은 diagnostic으로 분리
 - input commit -> first audio lower-bound fixture: p50 920 ms
 - 인터럽트 p95: 1.5 ms
 
@@ -29,6 +30,7 @@ Benchmarks from 2026-06-27:
 
 - Manual live session, 28 turns: p50 816 ms, p95 1.70 s
 - Optimized macOS `say` live fixture: source-audio end -> first audio p50 1.05 s, representative max 1.35 s
+- n8 VAD stability sweep: p50 1.24 s, representative max 1.51 s, one 5.0 s outlier kept as diagnostic
 - Input commit -> first audio lower-bound fixture: p50 920 ms
 - Interrupt p95: 1.5 ms
 
