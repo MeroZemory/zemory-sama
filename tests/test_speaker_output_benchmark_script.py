@@ -15,11 +15,36 @@ from scripts.bench_speaker_output import (
 
 def test_make_summary_separates_callback_outlier() -> None:
     events = [
-        {"event": "speaker.playback", "total_ms": 4.0, "speaker_buffer_ms": 3.0},
-        {"event": "speaker.playback", "total_ms": 4.2, "speaker_buffer_ms": 3.1},
-        {"event": "speaker.playback", "total_ms": 4.4, "speaker_buffer_ms": 3.2},
-        {"event": "speaker.playback", "total_ms": 4.6, "speaker_buffer_ms": 3.3},
-        {"event": "speaker.playback", "total_ms": 20.0, "speaker_buffer_ms": 19.0},
+        {
+            "event": "speaker.playback",
+            "total_ms": 4.0,
+            "queue_to_buffer_ms": 1.0,
+            "speaker_buffer_ms": 3.0,
+        },
+        {
+            "event": "speaker.playback",
+            "total_ms": 4.2,
+            "queue_to_buffer_ms": 1.1,
+            "speaker_buffer_ms": 3.1,
+        },
+        {
+            "event": "speaker.playback",
+            "total_ms": 4.4,
+            "queue_to_buffer_ms": 1.2,
+            "speaker_buffer_ms": 3.2,
+        },
+        {
+            "event": "speaker.playback",
+            "total_ms": 4.6,
+            "queue_to_buffer_ms": 1.3,
+            "speaker_buffer_ms": 3.3,
+        },
+        {
+            "event": "speaker.playback",
+            "total_ms": 20.0,
+            "queue_to_buffer_ms": 1.0,
+            "speaker_buffer_ms": 19.0,
+        },
     ]
 
     summary = _make_summary(
