@@ -72,7 +72,6 @@ async def test_realtime_manual_detector_uses_fast_endpoint_state_machine(
         async def feed(self, pcm24k: bytes) -> None:
             self.fed.append(pcm24k)
 
-    monkeypatch.setattr(cfg.settings.realtime, "local_endpoint_required_misses", 7)
     monkeypatch.setattr(silero, "SileroTurnDetector", FakeSileroTurnDetector)
 
     detector = RealtimeManualTurnDetector(llm=FakeRealtimeLLM())
@@ -80,8 +79,9 @@ async def test_realtime_manual_detector_uses_fast_endpoint_state_machine(
     await detector.feed(b"pcm")
 
     state_machine = captured["state_machine"]
+    assert cfg.settings.realtime.local_endpoint_required_misses == 14
     assert isinstance(state_machine, RealtimeEndpointStateMachine)
-    assert state_machine.required_misses == 7
+    assert state_machine.required_misses == 14
 
 
 @pytest.mark.asyncio
