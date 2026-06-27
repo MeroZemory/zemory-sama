@@ -244,7 +244,7 @@ Priority 는 단순하게 유지한다.
 - `speech_stopped` 또는 semantic turn end
 - `response.created`
 - first `response.output_audio.delta`
-- first speaker write
+- first speaker buffer write and first playback callback
 - interrupt trigger
 - speaker cleared
 - retrieval start/ready/late

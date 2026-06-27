@@ -54,4 +54,4 @@ After selecting 200 ms, a second pass tested whether the stable window could be 
 The 193 ms and 195 ms candidates were stable in the larger sweep, but neither improved the representative tail over 200 ms. Windows below 193 ms cut off generated Korean and/or English fixtures before the source audio had finished.
 `semantic_vad` remains configurable for conversations where avoiding early turn endings is more important than minimum latency.
 
-The speaker output callback block size was also lowered from 40 ms to 20 ms so first decoded audio can reach the output device sooner. This is a playback-path improvement and is not reflected in the API first-audio benchmark above.
+The speaker output callback block size was lowered from 40 ms to 20 ms in the first pass, then to 10 ms on 2026-06-28. Runtime `turn.complete` now records `total_ms` against the first output callback that consumes response audio, and also emits `speaker_buffer_ms` so local buffer-to-callback delay is visible. This is a playback-path improvement and is not reflected in the API first-audio benchmark above.
