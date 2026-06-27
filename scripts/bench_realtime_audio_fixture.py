@@ -238,6 +238,14 @@ async def _send_silence(llm, *, sample_rate: int, duration_s: float) -> None:
         await asyncio.sleep(chunk_duration_s)
 
 
+async def _commit_and_trigger_response(llm, *, audio_end_at: float) -> float:
+    if llm._conn is None:  # pragma: no cover - defensive live-only guard
+        raise RuntimeError("Realtime connection was not opened")
+    await llm._conn.input_audio_buffer.commit()
+    await llm.trigger_response()
+    return audio_end_at
+
+
 async def _wait_for_first_audio(
     llm,
     *,
@@ -319,11 +327,10 @@ async def _measure_sample(
             input_chunk_ms=input_chunk_ms,
         )
         if mode == "forced_commit":
-            if llm._conn is None:  # pragma: no cover - defensive live-only guard
-                raise RuntimeError("Realtime connection was not opened")
-            await llm._conn.input_audio_buffer.commit()
-            audio_end_at = time.monotonic()
-            await llm.trigger_response()
+            audio_end_at = await _commit_and_trigger_response(
+                llm,
+                audio_end_at=audio_end_at,
+            )
         else:
             await _send_silence(llm, sample_rate=cfg.SAMPLE_RATE, duration_s=1.6)
         (
