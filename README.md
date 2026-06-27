@@ -53,9 +53,9 @@ Steps:
 
 ## Performance Snapshot
 
-Benchmarks were refreshed on 2026-06-27 on macOS Apple Silicon with the
-`realtime_audio` profile. Artifacts are numeric-only; raw runtime logs are not
-committed because they can contain private transcript text.
+Benchmarks were refreshed on 2026-06-27 and 2026-06-28 on macOS Apple Silicon
+with the `realtime_audio` profile. Artifacts are numeric-only; raw runtime logs
+are not committed because they can contain private transcript text.
 
 Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/reports/2026-06-28-final-comparison).
 
@@ -65,9 +65,12 @@ Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/re
 | VAD stability sweep | 8 Korean/English macOS `say` clips, server VAD 200 ms | p50 1240.0 ms, representative max 1509.0 ms, 1 extreme outlier retained as diagnostic | [docs/benchmarks/2026-06-27-server-vad-200-n8](docs/benchmarks/2026-06-27-server-vad-200-n8) |
 | Manual live session | 28 real conversation turns | turn p50 816.0 ms, representative max 1698.0 ms, 1 extreme outlier kept as diagnostic | [docs/benchmarks/2026-06-27-local-manual](docs/benchmarks/2026-06-27-local-manual) |
 | Controlled audio samples | 6 Korean/English macOS `say` clips | input commit to first audio p50 920.4 ms, representative max 1202.8 ms | [docs/benchmarks/2026-06-27-controlled-say](docs/benchmarks/2026-06-27-controlled-say) |
+| Speaker output callback | 24 local `SpeakerStream` output samples, 10 ms output block | queue to first playback callback p50 7.404 ms, representative max 8.326 ms, no outliers | [docs/benchmarks/2026-06-28-speaker-output-callback](docs/benchmarks/2026-06-28-speaker-output-callback) |
 | Reference setup comparison | 6 major AI VTuber / realtime voice repos | all dependency setups completed with project-specific environments; no invented cross-repo latency numbers | [docs/benchmarks/2026-06-27-comparison](docs/benchmarks/2026-06-27-comparison) |
 
 ![Optimized live latency](docs/benchmarks/2026-06-27-optimized-server-vad-200/latency.svg)
+
+![Speaker output callback latency](docs/benchmarks/2026-06-28-speaker-output-callback/latency.svg)
 
 ![VAD stability sweep](docs/benchmarks/2026-06-27-server-vad-200-n8/latency.svg)
 
@@ -227,7 +230,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 77 tests passing.
+- 79 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 86%.
 

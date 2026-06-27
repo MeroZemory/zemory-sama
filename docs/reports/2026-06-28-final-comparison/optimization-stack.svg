@@ -30,7 +30,7 @@
     <rect x="682" y="108" width="160" height="82" rx="8" fill="#fef3c7" stroke="#d97706"/>
     <text x="702" y="136" font-size="14" font-weight="700" fill="#78350f">Playback</text>
     <text x="702" y="160" font-size="12" fill="#92400e">10 ms callback</text>
-    <text x="702" y="178" font-size="12" fill="#92400e">first-play timing</text>
+    <text x="702" y="178" font-size="12" fill="#92400e">p50 7.4 ms measured</text>
 
     <rect x="132" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
     <text x="154" y="266" font-size="14" font-weight="700" fill="#334155">Input streaming</text>
@@ -42,7 +42,7 @@
 
     <rect x="628" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
     <text x="650" y="266" font-size="14" font-weight="700" fill="#334155">Still open</text>
-    <text x="650" y="290" font-size="12" fill="#475569">device rerun, anticipation</text>
+    <text x="650" y="290" font-size="12" fill="#475569">full live rerun, anticipation</text>
   </g>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
