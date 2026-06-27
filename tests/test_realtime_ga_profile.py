@@ -71,6 +71,17 @@ def test_local_cascade_profile_disables_server_turn_detection(monkeypatch) -> No
     assert session["audio"]["input"]["turn_detection"] is None
 
 
+def test_realtime_audio_can_disable_server_turn_detection(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.settings, "profile", "realtime_audio")
+    monkeypatch.setattr(cfg.settings.realtime, "turn_detection", "none")
+
+    session = cfg.build_session_config()
+
+    assert session["type"] == "realtime"
+    assert session["output_modalities"] == ["audio"]
+    assert session["audio"]["input"]["turn_detection"] is None
+
+
 def test_realtime_audio_pipeline_does_not_require_external_tts() -> None:
     bundle = build_pipeline(
         "realtime_audio",

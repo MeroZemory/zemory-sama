@@ -137,9 +137,20 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
 
 
 def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
-    args = _parse_args(["--out", "out", "--input-chunk-ms", "10", "--play-output"])
+    args = _parse_args(
+        [
+            "--out",
+            "out",
+            "--input-chunk-ms",
+            "10",
+            "--turn-detection",
+            "none",
+            "--play-output",
+        ]
+    )
 
     assert args.input_chunk_ms == 10
+    assert args.turn_detection == "none"
     assert args.play_output is True
 
 
