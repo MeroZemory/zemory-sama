@@ -227,7 +227,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 75 tests passing.
+- 77 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 86%.
 

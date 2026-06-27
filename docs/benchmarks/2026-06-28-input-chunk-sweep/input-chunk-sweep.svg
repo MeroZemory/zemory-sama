@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="290" role="img" aria-label="Input chunk duration sweep">
+  <rect width="100%" height="100%" fill="#ffffff"/>
+  <text x="24" y="34" font-size="18" font-weight="700" fill="#111827">Input chunk duration sweep</text>
+  <text x="24" y="56" font-size="12" fill="#64748b">bar = p50, marker = representative max, server_vad 200 ms</text>
+  <line x1="230" y1="238" x2="820" y2="238" stroke="#cbd5e1"/>
+  <text x="230" y="260" font-size="11" fill="#64748b">0</text>
+  <text x="375" y="260" font-size="11" fill="#64748b">500</text>
+  <text x="545" y="260" font-size="11" fill="#64748b">1000</text>
+  <text x="705" y="260" font-size="11" fill="#64748b">1500 ms</text>
+
+  <text x="24" y="102" font-size="13" fill="#111827">20 ms input chunks, n4</text>
+  <rect x="230" y="86" width="314" height="20" rx="3" fill="#93c5fd"/>
+  <line x1="812" y1="82" x2="812" y2="110" stroke="#1d4ed8" stroke-width="3"/>
+  <text x="552" y="101" font-size="12" fill="#1e3a8a">p50 1064 ms</text>
+  <text x="704" y="121" font-size="12" fill="#1e3a8a">tail 1971 ms</text>
+
+  <text x="24" y="142" font-size="13" fill="#111827">10 ms input chunks, n4</text>
+  <rect x="230" y="126" width="339" height="20" rx="3" fill="#bae6fd"/>
+  <line x1="624" y1="122" x2="624" y2="150" stroke="#0284c7" stroke-width="3"/>
+  <text x="577" y="141" font-size="12" fill="#075985">p50 1150 ms</text>
+  <text x="636" y="141" font-size="12" fill="#075985">tail 1335 ms</text>
+
+  <text x="24" y="182" font-size="13" fill="#111827">20 ms input chunks, n8</text>
+  <rect x="230" y="166" width="348" height="20" rx="3" fill="#22c55e"/>
+  <line x1="635" y1="162" x2="635" y2="190" stroke="#15803d" stroke-width="3"/>
+  <text x="586" y="181" font-size="12" fill="#14532d">p50 1180 ms</text>
+  <text x="647" y="181" font-size="12" fill="#14532d">tail 1375 ms, kept</text>
+
+  <text x="24" y="222" font-size="13" fill="#111827">10 ms input chunks, n8</text>
+  <rect x="230" y="206" width="356" height="20" rx="3" fill="#f97316"/>
+  <line x1="764" y1="202" x2="764" y2="230" stroke="#c2410c" stroke-width="3"/>
+  <text x="594" y="221" font-size="12" fill="#7c2d12">p50 1206 ms</text>
+  <text x="776" y="221" font-size="12" fill="#7c2d12">tail 1811 ms, rejected</text>
+</svg>

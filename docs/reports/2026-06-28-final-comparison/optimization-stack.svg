@@ -32,13 +32,17 @@
     <text x="702" y="160" font-size="12" fill="#92400e">10 ms callback</text>
     <text x="702" y="178" font-size="12" fill="#92400e">first-play timing</text>
 
-    <rect x="230" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
-    <text x="252" y="266" font-size="14" font-weight="700" fill="#334155">Device I/O</text>
-    <text x="252" y="290" font-size="12" fill="#475569">sounddevice latency="low"</text>
+    <rect x="132" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="154" y="266" font-size="14" font-weight="700" fill="#334155">Input streaming</text>
+    <text x="154" y="290" font-size="12" fill="#475569">20 ms kept after sweep</text>
 
-    <rect x="530" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
-    <text x="552" y="266" font-size="14" font-weight="700" fill="#334155">Still open</text>
-    <text x="552" y="290" font-size="12" fill="#475569">input chunk sweep, live rerun</text>
+    <rect x="380" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="402" y="266" font-size="14" font-weight="700" fill="#334155">Device I/O</text>
+    <text x="402" y="290" font-size="12" fill="#475569">sounddevice latency="low"</text>
+
+    <rect x="628" y="238" width="220" height="76" rx="8" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="650" y="266" font-size="14" font-weight="700" fill="#334155">Still open</text>
+    <text x="650" y="290" font-size="12" fill="#475569">device rerun, anticipation</text>
   </g>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">

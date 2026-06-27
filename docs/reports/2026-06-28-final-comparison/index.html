@@ -179,7 +179,7 @@
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
       <span class="pill">성능 기준 commit: <code>d6f53cb</code></span>
-      <span class="pill">검증: 75 tests, coverage 86.64%</span>
+      <span class="pill">검증: 77 tests, coverage 86.64%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -206,7 +206,7 @@
   <section>
     <h2>1. 결론</h2>
     <div class="callout">
-      <p><strong>현재 기본값은 유지한다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
+      <p><strong>현재 기본값은 유지한다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 20 ms input chunk, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
     </div>
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
     <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
@@ -324,6 +324,43 @@
       <img src="outlier-policy.svg" alt="Extreme outlier handling SVG">
       <figcaption>raw max는 보존한다. 다만 severe outlier가 headline max를 대표하지 않게 representative max를 별도 산출한다.</figcaption>
     </figure>
+
+    <h3>Input chunk sweep</h3>
+    <p>2026-06-28 추가 sweep에서는 입력 chunk를 20 ms에서 10 ms로 낮추는 후보를 비교했다. 10 ms는 n8에서 p50 1205.6 ms, representative max 1810.5 ms로 20 ms의 p50 1179.6 ms, representative max 1374.9 ms보다 느렸다. 따라서 입력 chunk 기본값은 20 ms로 유지한다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Candidate</th>
+          <th class="num">Valid turns</th>
+          <th class="num">p50</th>
+          <th class="num">Representative max</th>
+          <th class="num">Early cutoffs</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-input-chunk-20-n8/">20 ms input chunk n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1179.6 ms</td>
+          <td class="num">1374.9 ms</td>
+          <td class="num">0</td>
+          <td class="status-good">Kept</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-input-chunk-10-n8/">10 ms input chunk n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1205.6 ms</td>
+          <td class="num">1810.5 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">Rejected</td>
+        </tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="input-chunk-sweep.svg" alt="Input chunk sweep SVG">
+      <figcaption>10 ms input chunk did not buy lower VAD latency in the n8 live fixture; it increased the representative tail.</figcaption>
+    </figure>
   </section>
 
   <section>
@@ -427,6 +464,11 @@
           <td>FD-Bench식 end-of-speech to response-start 관점과 severe stall 분리 요구에 맞춘다.</td>
         </tr>
         <tr>
+          <td>Input streaming</td>
+          <td>20 ms input chunks kept after 10 ms live sweep</td>
+          <td>10 ms chunks increased n8 p50 and representative max; no default change.</td>
+        </tr>
+        <tr>
           <td>Playback</td>
           <td>10 ms output callback, first playback callback timestamp</td>
           <td>buffer write가 아니라 실제 callback 소비 시각을 측정해 로컬 playback 대기를 드러낸다.</td>
@@ -443,11 +485,11 @@
   <section>
     <h2>6. 남은 병목과 다음 실험</h2>
     <div class="warning">
-      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했음을 보여주지만, endpoint anticipation과 input chunk granularity는 아직 실험 후보로 남아 있다.</p>
+      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했고 input chunk 후보도 기각했음을 보여주지만, endpoint anticipation과 실제 device callback live rerun은 아직 남아 있다.</p>
     </div>
     <ol>
       <li><strong>실제 live rerun:</strong> 10 ms playback callback과 sounddevice low-latency I/O는 API first-audio fixture에 반영되지 않는다. 실제 device callback 기준 로그로 수동 세션을 다시 측정해야 한다.</li>
-      <li><strong>Input chunk sweep:</strong> 현재 microphone chunk는 20 ms다. 10 ms input chunk가 VAD responsiveness를 개선하는지, API append overhead만 늘리는지 별도 sweep이 필요하다.</li>
+      <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
       <li><strong>Speculative endpoint anticipation:</strong> 최신 turn-taking 연구는 endpoint anticipation과 speculative response가 평균 latency를 줄일 수 있음을 시사한다. 다만 correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
       <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
     </ol>
@@ -466,6 +508,7 @@
       <li><a href="https://arxiv.org/html/2503.04721v3">FD-Bench</a></li>
       <li><a href="../../ref/current-state-2026-06-27.md">Local research snapshot</a></li>
       <li><a href="../../benchmarks/2026-06-27-turn-detection-optimization/">Turn detection optimization notes</a></li>
+      <li><a href="../../benchmarks/2026-06-28-input-chunk-sweep/">Input chunk duration sweep</a></li>
     </ul>
   </section>
 </main>
