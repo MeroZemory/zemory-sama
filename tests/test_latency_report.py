@@ -38,8 +38,11 @@ def test_latency_report_computes_p50_p95_and_passes_thresholds(tmp_path) -> None
     assert report.turn_count == 5
     assert report.turn_min_ms == pytest.approx(420)
     assert report.turn_p50_ms == pytest.approx(650)
+    assert report.turn_p90_ms == pytest.approx(700)
     assert report.turn_p95_ms == pytest.approx(700)
+    assert report.turn_representative_max_ms == pytest.approx(700)
     assert report.turn_max_ms == pytest.approx(700)
+    assert report.turn_extreme_outlier_count == 0
     assert report.interrupt_p95_ms == pytest.approx(130)
     assert report.passes(turn_p50_ms=700, turn_p95_ms=1200, interrupt_p95_ms=150)
 
@@ -66,6 +69,25 @@ def test_latency_report_fails_when_interrupt_budget_is_exceeded(tmp_path) -> Non
 def test_latency_report_requires_turn_samples() -> None:
     with pytest.raises(ValueError, match="turn latency"):
         LatencyReport.from_events([{"fixture": "empty"}])
+
+
+def test_latency_report_keeps_extreme_max_out_of_representative_tail() -> None:
+    report = LatencyReport.from_events(
+        [
+            {"total_ms": 500},
+            {"total_ms": 520},
+            {"total_ms": 540},
+            {"total_ms": 560},
+            {"total_ms": 580},
+            {"total_ms": 600},
+            {"total_ms": 620},
+            {"total_ms": 5000},
+        ]
+    )
+
+    assert report.turn_max_ms == pytest.approx(5000)
+    assert report.turn_representative_max_ms == pytest.approx(620)
+    assert report.turn_extreme_outlier_count == 1
 
 
 def test_parse_structlog_latency_events_ignores_transcript_text() -> None:
