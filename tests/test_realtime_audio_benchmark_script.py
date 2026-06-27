@@ -98,5 +98,7 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
     summary = (tmp_path / "summary.json").read_text(encoding="utf-8")
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert '"turn_count": 0' in summary
+    assert '"total_event_count": 1' in summary
+    assert '"invalid_latency_count": 1' in summary
     assert '"early_cutoff_count": 1' in summary
     assert "No valid latency samples" in readme
