@@ -242,6 +242,7 @@ async def test_stream_pcm_until_local_endpoint_waits_after_source_audio() -> Non
 
 
 async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) -> None:
+    from zemory import config as cfg
     from zemory.providers.llm import openai_realtime
     from zemory.providers.turn import realtime_manual
 
@@ -275,6 +276,15 @@ async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) ->
 
     monkeypatch.setattr(openai_realtime, "OpenAIRealtimeLLM", FakeLLM)
     monkeypatch.setattr(realtime_manual, "RealtimeManualTurnDetector", FakeManualTurnDetector)
+    monkeypatch.setattr(cfg.settings, "profile", cfg.settings.profile)
+    monkeypatch.setattr(cfg.settings.realtime, "semantic_vad_eagerness", cfg.settings.realtime.semantic_vad_eagerness)
+    monkeypatch.setattr(cfg.settings.realtime, "turn_detection", cfg.settings.realtime.turn_detection)
+    monkeypatch.setattr(cfg.settings.realtime, "server_vad_threshold", cfg.settings.realtime.server_vad_threshold)
+    monkeypatch.setattr(
+        cfg.settings.realtime,
+        "server_vad_silence_duration_ms",
+        cfg.settings.realtime.server_vad_silence_duration_ms,
+    )
     monkeypatch.setattr(
         "scripts.bench_realtime_audio_fixture._stream_pcm_until_local_endpoint",
         fake_stream_until_local_endpoint,

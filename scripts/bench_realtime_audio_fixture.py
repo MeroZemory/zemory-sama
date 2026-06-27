@@ -362,6 +362,7 @@ async def _measure_sample(
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
     manual_turn = None
+    local_speech_stopped_at: float | None = None
     if mode == "local_endpoint_commit":
         manual_turn = RealtimeManualTurnDetector(llm=llm)
     speaker = None
@@ -381,14 +382,14 @@ async def _measure_sample(
         if mode == "local_endpoint_commit":
             if manual_turn is None:  # pragma: no cover - defensive guard
                 raise RuntimeError("manual turn detector was not initialized")
-            audio_end_at, speech_stopped_at = await _stream_pcm_until_local_endpoint(
+            audio_end_at, local_speech_stopped_at = await _stream_pcm_until_local_endpoint(
                 manual_turn,
                 pcm,
                 sample_rate=cfg.SAMPLE_RATE,
                 input_chunk_ms=input_chunk_ms,
                 silence_timeout_s=timeout_s,
             )
-            if speech_stopped_at is None:
+            if local_speech_stopped_at is None:
                 raise TimeoutError("local endpoint detector did not emit speech_end")
             audio_end_at = await _commit_and_trigger_response(
                 llm,
@@ -409,11 +410,12 @@ async def _measure_sample(
             else:
                 await _send_silence(llm, sample_rate=cfg.SAMPLE_RATE, duration_s=1.6)
         (
-            speech_stopped_at,
+            api_speech_stopped_at,
             first_audio_at,
             first_speaker_write_at,
             first_playback_at,
         ) = await waiter
+        speech_stopped_at = local_speech_stopped_at or api_speech_stopped_at
     finally:
         await llm.close()
         if feed_task is not None:
