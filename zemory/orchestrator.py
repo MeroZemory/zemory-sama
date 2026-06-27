@@ -10,7 +10,7 @@ Wires the five tasks of the pipeline:
 
 End-to-end latency measurement emits a ``turn.complete`` structlog entry
 carrying ``speech_end_ts``, ``first_llm_delta_ts``, ``first_tts_byte_ts``,
-``speaker_first_write_ts``, ``total_ms``, ``profile``, ``interrupted``.
+``speaker_first_play_ts``, ``total_ms``, ``profile``, ``interrupted``.
 """
 
 from __future__ import annotations
@@ -69,7 +69,8 @@ class TurnTimer:
         "speech_end_ts",
         "first_llm_delta_ts",
         "first_tts_byte_ts",
-        "speaker_first_write_ts",
+        "speaker_first_play_ts",
+        "speaker_buffer_ms",
         "correction_ms",
         "interrupted",
     )
@@ -79,14 +80,15 @@ class TurnTimer:
         self.speech_end_ts: float | None = None
         self.first_llm_delta_ts: float | None = None
         self.first_tts_byte_ts: float | None = None
-        self.speaker_first_write_ts: float | None = None
+        self.speaker_first_play_ts: float | None = None
+        self.speaker_buffer_ms: float | None = None
         self.correction_ms: float | None = None
         self.interrupted = False
 
     def total_ms(self) -> float | None:
-        if self.speech_end_ts is None or self.speaker_first_write_ts is None:
+        if self.speech_end_ts is None or self.speaker_first_play_ts is None:
             return None
-        return (self.speaker_first_write_ts - self.speech_end_ts) * 1000
+        return (self.speaker_first_play_ts - self.speech_end_ts) * 1000
 
 
 async def run() -> None:
@@ -470,8 +472,14 @@ async def run() -> None:
 
         # Capture speaker timing BEFORE beep plays so the next turn's
         # ttfb measurement isn't overwritten by the beep's buffer write.
-        if speaker.first_write_at is not None:
-            t.speaker_first_write_ts = speaker.first_write_at
+        if speaker.first_play_at is not None:
+            t.speaker_first_play_ts = speaker.first_play_at
+        elif speaker.first_write_at is not None:
+            t.speaker_first_play_ts = speaker.first_write_at
+        if speaker.first_write_at is not None and speaker.first_play_at is not None:
+            t.speaker_buffer_ms = (
+                speaker.first_play_at - speaker.first_write_at
+            ) * 1000
 
         # Immediately play the "mic live" beep. Its built-in post-gap
         # (ready_beep_post_gap_s) doubles as the echo-decay window that
@@ -500,6 +508,10 @@ async def run() -> None:
                 first_tts_byte_ms=(
                     round((t.first_tts_byte_ts - t.speech_end_ts) * 1000, 1)
                     if t.first_tts_byte_ts and t.speech_end_ts else None
+                ),
+                speaker_buffer_ms=(
+                    round(t.speaker_buffer_ms, 1)
+                    if t.speaker_buffer_ms is not None else None
                 ),
                 correction_ms=(
                     round(t.correction_ms, 1) if t.correction_ms is not None else None

@@ -36,7 +36,7 @@ def generate_beep_pcm(
     return pcm16.tobytes()
 
 
-def output_block_size(sample_rate: int = SAMPLE_RATE, block_ms: int = 20) -> int:
+def output_block_size(sample_rate: int = SAMPLE_RATE, block_ms: int = 10) -> int:
     """Return output callback frames for a low-latency PCM block."""
     return int(sample_rate * block_ms / 1000)
 
@@ -90,11 +90,13 @@ class SpeakerStream:
         self._buffer = bytearray()
         self._lock = threading.Lock()
         self.first_write_at: float | None = None
+        self.first_play_at: float | None = None
         self._armed = False
 
     def arm(self) -> None:
         """Mark the start of a new response. Next buffer write records its timestamp."""
         self.first_write_at = None
+        self.first_play_at = None
         self._armed = True
 
     def _callback(
@@ -108,6 +110,8 @@ class SpeakerStream:
             else:
                 data = bytes(self._buffer) + b"\x00" * (bytes_needed - len(self._buffer))
                 self._buffer.clear()
+            if self.first_play_at is None and data.strip(b"\x00"):
+                self.first_play_at = time.monotonic()
         outdata[:] = np.frombuffer(data, dtype="int16").reshape(-1, 1)
 
     async def feed(self) -> None:
