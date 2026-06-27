@@ -15,8 +15,11 @@ class LatencyReport:
     turn_min_ms: float
     turn_mean_ms: float
     turn_p50_ms: float
+    turn_p90_ms: float
     turn_p95_ms: float
+    turn_representative_max_ms: float
     turn_max_ms: float
+    turn_extreme_outlier_count: int
     interrupt_count: int
     interrupt_p95_ms: float | None
 
@@ -31,6 +34,7 @@ class LatencyReport:
             raise ValueError("No turn latency samples found")
 
         turn_latencies_sorted = sorted(turn_latencies)
+        representative_latencies = _exclude_extreme_outliers(turn_latencies_sorted)
         interrupt_latencies = [
             float(event["interrupt_ms"])
             for event in events
@@ -41,8 +45,13 @@ class LatencyReport:
             turn_min_ms=turn_latencies_sorted[0],
             turn_mean_ms=sum(turn_latencies) / len(turn_latencies),
             turn_p50_ms=_percentile_nearest_rank(turn_latencies, 50),
+            turn_p90_ms=_percentile_nearest_rank(turn_latencies, 90),
             turn_p95_ms=_percentile_nearest_rank(turn_latencies, 95),
+            turn_representative_max_ms=representative_latencies[-1],
             turn_max_ms=turn_latencies_sorted[-1],
+            turn_extreme_outlier_count=(
+                len(turn_latencies_sorted) - len(representative_latencies)
+            ),
             interrupt_count=len(interrupt_latencies),
             interrupt_p95_ms=(
                 _percentile_nearest_rank(interrupt_latencies, 95)
@@ -72,8 +81,11 @@ class LatencyReport:
             "turn_min_ms": self.turn_min_ms,
             "turn_mean_ms": self.turn_mean_ms,
             "turn_p50_ms": self.turn_p50_ms,
+            "turn_p90_ms": self.turn_p90_ms,
             "turn_p95_ms": self.turn_p95_ms,
+            "turn_representative_max_ms": self.turn_representative_max_ms,
             "turn_max_ms": self.turn_max_ms,
+            "turn_extreme_outlier_count": self.turn_extreme_outlier_count,
             "interrupt_count": self.interrupt_count,
             "interrupt_p95_ms": self.interrupt_p95_ms,
         }
@@ -128,6 +140,17 @@ def _parse_key_values(line: str) -> dict[str, str]:
     }
 
 
+def _exclude_extreme_outliers(ordered: list[float]) -> list[float]:
+    if len(ordered) < 4:
+        return ordered
+    q1 = _percentile_linear(ordered, 25)
+    q3 = _percentile_linear(ordered, 75)
+    iqr = q3 - q1
+    upper_fence = q3 + 3 * iqr
+    filtered = [value for value in ordered if value <= upper_fence]
+    return filtered or ordered
+
+
 def _percentile_nearest_rank(values: list[float], percentile: int) -> float:
     ordered = sorted(values)
     if not ordered:
@@ -135,3 +158,16 @@ def _percentile_nearest_rank(values: list[float], percentile: int) -> float:
     # Use ceil(p/100*n)-1, with a lower bound of 0.
     rank = max(0, int(-(-percentile * len(ordered) // 100)) - 1)
     return ordered[min(rank, len(ordered) - 1)]
+
+
+def _percentile_linear(ordered: list[float], percentile: int) -> float:
+    if not ordered:
+        raise ValueError("No values")
+    if len(ordered) == 1:
+        return ordered[0]
+
+    rank = (percentile / 100) * (len(ordered) - 1)
+    lower = int(rank)
+    upper = min(lower + 1, len(ordered) - 1)
+    fraction = rank - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction

@@ -74,8 +74,11 @@ def _markdown(summary: dict[str, Any]) -> str:
 | turn min | {summary["turn_min_ms"]:.1f} ms |
 | turn mean | {summary["turn_mean_ms"]:.1f} ms |
 | turn p50 | {summary["turn_p50_ms"]:.1f} ms |
+| turn p90 | {summary["turn_p90_ms"]:.1f} ms |
 | turn p95 | {summary["turn_p95_ms"]:.1f} ms |
-| turn max | {summary["turn_max_ms"]:.1f} ms |
+| representative max | {summary["turn_representative_max_ms"]:.1f} ms |
+| extreme outliers | {summary["turn_extreme_outlier_count"]} |
+| observed max, diagnostic | {summary["turn_max_ms"]:.1f} ms |
 | interrupt count | {summary["interrupt_count"]} |
 | interrupt p95 | {interrupt_value} |
 
@@ -86,8 +89,13 @@ def _markdown(summary: dict[str, Any]) -> str:
 def _svg(summary: dict[str, Any]) -> str:
     metrics = [
         ("turn p50", float(summary["turn_p50_ms"]), 700.0),
+        ("turn p90", float(summary["turn_p90_ms"]), 1000.0),
         ("turn p95", float(summary["turn_p95_ms"]), 1200.0),
-        ("turn max", float(summary["turn_max_ms"]), 2000.0),
+        (
+            "representative max",
+            float(summary["turn_representative_max_ms"]),
+            1500.0,
+        ),
     ]
     if summary["interrupt_p95_ms"] is not None:
         metrics.append(("interrupt p95", float(summary["interrupt_p95_ms"]), 150.0))
