@@ -39,6 +39,14 @@ def write_benchmark_artifacts(
     summary = {
         "title": title,
         "source_note": source_note,
+        "total_event_count": len(events),
+        "invalid_latency_count": sum(
+            1
+            for event in events
+            if event.get("event") == "turn.complete"
+            and event.get("total_ms") is None
+        ),
+        "early_cutoff_count": sum(1 for event in events if event.get("early_cutoff")),
         **report.as_dict(),
     }
     summary_json.write_text(
@@ -71,6 +79,9 @@ def _markdown(summary: dict[str, Any]) -> str:
 | Metric | Value |
 | --- | ---: |
 | turn count | {summary["turn_count"]} |
+| total events | {summary["total_event_count"]} |
+| invalid latency samples | {summary["invalid_latency_count"]} |
+| early cutoffs | {summary["early_cutoff_count"]} |
 | turn min | {summary["turn_min_ms"]:.1f} ms |
 | turn mean | {summary["turn_mean_ms"]:.1f} ms |
 | turn p50 | {summary["turn_p50_ms"]:.1f} ms |
