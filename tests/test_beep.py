@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import numpy as np
 
-from zemory.audio import generate_beep_pcm, output_block_size
+from zemory.audio import SpeakerStream, generate_beep_pcm, output_block_size
 
 
 def test_beep_has_expected_length():
@@ -52,5 +54,34 @@ def test_volume_clamped_to_one():
     assert samples.min() >= -32768
 
 
-def test_output_block_size_uses_20ms_chunks_by_default():
-    assert output_block_size(sample_rate=24_000) == 480
+def test_output_block_size_uses_10ms_chunks_by_default():
+    assert output_block_size(sample_rate=24_000) == 240
+
+
+async def test_speaker_records_first_callback_playback_time():
+    speaker = SpeakerStream(asyncio.get_running_loop())
+    speaker.arm()
+    assert speaker.first_write_at is None
+    assert speaker.first_play_at is None
+
+    feed_task = asyncio.create_task(speaker.feed())
+    try:
+        await speaker.queue.put(np.ones(240, dtype=np.int16).tobytes())
+        for _ in range(10):
+            if speaker.first_write_at is not None:
+                break
+            await asyncio.sleep(0)
+
+        outdata = np.empty((240, 1), dtype=np.int16)
+        speaker._callback(outdata, 240, None, None)
+
+        assert speaker.first_write_at is not None
+        assert speaker.first_play_at is not None
+        assert speaker.first_play_at >= speaker.first_write_at
+        assert np.max(np.abs(outdata)) > 0
+    finally:
+        feed_task.cancel()
+        try:
+            await feed_task
+        except asyncio.CancelledError:
+            pass
