@@ -7,9 +7,11 @@ import asyncio
 import pytest
 
 from scripts.bench_realtime_audio_fixture import (
+    Sample,
     _chunk_pcm,
     _commit_and_trigger_response,
     _event_from_timings,
+    _measure_sample,
     _parse_args,
     _stream_pcm_realtime,
     _stream_pcm_until_local_endpoint,
@@ -237,3 +239,67 @@ async def test_stream_pcm_until_local_endpoint_waits_after_source_audio() -> Non
     assert speech_stopped_at is not None
     assert speech_stopped_at >= audio_end_at
     assert [len(chunk) for chunk in turn.fed] == [480, 480, 480]
+
+
+async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) -> None:
+    from zemory.providers.llm import openai_realtime
+    from zemory.providers.turn import realtime_manual
+
+    class FakeLLM:
+        def __init__(self, _api_key: str) -> None:
+            self.opened = False
+            self.closed = False
+
+        async def open_session(self) -> None:
+            self.opened = True
+
+        async def close(self) -> None:
+            self.closed = True
+
+    class FakeManualTurnDetector:
+        def __init__(self, llm: FakeLLM) -> None:
+            self.llm = llm
+            self.closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    async def fake_stream_until_local_endpoint(*_args, **_kwargs):
+        return 100.0, 100.25
+
+    async def fake_commit_and_trigger_response(_llm, *, audio_end_at: float) -> float:
+        return audio_end_at
+
+    async def fake_wait_for_first_audio(_llm, *, timeout_s: float, speaker=None):
+        return None, 101.0, None, None
+
+    monkeypatch.setattr(openai_realtime, "OpenAIRealtimeLLM", FakeLLM)
+    monkeypatch.setattr(realtime_manual, "RealtimeManualTurnDetector", FakeManualTurnDetector)
+    monkeypatch.setattr(
+        "scripts.bench_realtime_audio_fixture._stream_pcm_until_local_endpoint",
+        fake_stream_until_local_endpoint,
+    )
+    monkeypatch.setattr(
+        "scripts.bench_realtime_audio_fixture._commit_and_trigger_response",
+        fake_commit_and_trigger_response,
+    )
+    monkeypatch.setattr(
+        "scripts.bench_realtime_audio_fixture._wait_for_first_audio",
+        fake_wait_for_first_audio,
+    )
+
+    event = await _measure_sample(
+        Sample("unit", "Samantha", "test"),
+        b"audio",
+        eagerness="high",
+        turn_detection="none",
+        server_vad_threshold=0.5,
+        server_vad_silence_ms=300,
+        input_chunk_ms=20,
+        mode="local_endpoint_commit",
+        timeout_s=1.0,
+        play_output=False,
+    )
+
+    assert event["vad_wait_ms"] == pytest.approx(250.0)
+    assert event["first_audio_after_speech_stopped_ms"] == pytest.approx(750.0)
