@@ -32,6 +32,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
         server_vad_threshold=0.5,
         input_chunk_ms=10,
         mode="semantic_vad",
+        local_endpoint_required_misses=None,
         audio_end_at=100.0,
         speech_stopped_at=100.25,
         first_audio_at=100.75,
@@ -43,6 +44,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
     assert event["turn_detection"] == "semantic_vad"
     assert event["server_vad_threshold"] == 0.5
     assert event["input_chunk_ms"] == 10
+    assert event["local_endpoint_required_misses"] is None
     assert event["sample_source"] == "macos_say_semantic_vad"
     assert event["total_ms"] == pytest.approx(750.0)
     assert event["vad_wait_ms"] == pytest.approx(250.0)
@@ -59,6 +61,7 @@ def test_event_from_timings_can_measure_device_playback() -> None:
         server_vad_threshold=0.5,
         input_chunk_ms=20,
         mode="semantic_vad",
+        local_endpoint_required_misses=None,
         audio_end_at=100.0,
         speech_stopped_at=100.2,
         first_audio_at=100.7,
@@ -83,6 +86,7 @@ def test_event_from_timings_excludes_early_cutoff_from_latency_samples() -> None
         server_vad_threshold=0.5,
         input_chunk_ms=20,
         mode="semantic_vad",
+        local_endpoint_required_misses=None,
         audio_end_at=100.0,
         speech_stopped_at=99.5,
         first_audio_at=99.9,
@@ -103,6 +107,7 @@ def test_event_from_timings_excludes_speech_stop_before_audio_end() -> None:
         server_vad_threshold=0.5,
         input_chunk_ms=20,
         mode="semantic_vad",
+        local_endpoint_required_misses=None,
         audio_end_at=100.0,
         speech_stopped_at=99.7,
         first_audio_at=100.2,
@@ -121,6 +126,7 @@ def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> 
         server_vad_threshold=0.6,
         input_chunk_ms=20,
         mode="semantic_vad",
+        local_endpoint_required_misses=None,
         audio_end_at=100.0,
         speech_stopped_at=99.5,
         first_audio_at=100.1,
@@ -153,6 +159,8 @@ def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
             "local_endpoint_commit",
             "--turn-detection",
             "none",
+            "--local-endpoint-required-misses",
+            "14",
             "--play-output",
         ]
     )
@@ -160,6 +168,7 @@ def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
     assert args.input_chunk_ms == 10
     assert args.mode == "local_endpoint_commit"
     assert args.turn_detection == "none"
+    assert args.local_endpoint_required_misses == 14
     assert args.play_output is True
 
 
@@ -305,6 +314,7 @@ async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) ->
         turn_detection="none",
         server_vad_threshold=0.5,
         server_vad_silence_ms=300,
+        local_endpoint_required_misses=7,
         input_chunk_ms=20,
         mode="local_endpoint_commit",
         timeout_s=1.0,
@@ -313,3 +323,4 @@ async def test_measure_local_endpoint_preserves_local_speech_end(monkeypatch) ->
 
     assert event["vad_wait_ms"] == pytest.approx(250.0)
     assert event["first_audio_after_speech_stopped_ms"] == pytest.approx(750.0)
+    assert event["local_endpoint_required_misses"] == 7
