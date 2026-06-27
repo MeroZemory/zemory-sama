@@ -60,6 +60,7 @@ def _event_from_timings(
     eagerness: Eagerness,
     turn_detection: TurnDetection,
     server_vad_threshold: float,
+    input_chunk_ms: int,
     mode: Mode,
     audio_end_at: float,
     speech_stopped_at: float | None,
@@ -77,6 +78,7 @@ def _event_from_timings(
         "eagerness": eagerness,
         "turn_detection": turn_detection,
         "server_vad_threshold": server_vad_threshold,
+        "input_chunk_ms": input_chunk_ms,
         "interrupted": False,
         "early_cutoff": early_cutoff,
         "sample_source": f"macos_say_{mode}",
@@ -190,12 +192,21 @@ def _render_sample(sample: Sample, out_dir: Path) -> bytes:
     return pcm.read_bytes()
 
 
-async def _stream_pcm_realtime(llm, pcm: bytes, *, sample_rate: int) -> float:
-    chunk_duration_s = 0.02
+async def _stream_pcm_realtime(
+    llm,
+    pcm: bytes,
+    *,
+    sample_rate: int,
+    input_chunk_ms: int,
+    sleep=asyncio.sleep,
+) -> float:
+    chunk_duration_s = input_chunk_ms / 1000
     chunk_size = int(sample_rate * chunk_duration_s) * 2
     for chunk in _chunk_pcm(pcm, chunk_size=chunk_size):
         await llm.push_audio(chunk)
-        await asyncio.sleep(chunk_duration_s)
+        maybe_sleep = sleep(chunk_duration_s)
+        if maybe_sleep is not None:
+            await maybe_sleep
     return time.monotonic()
 
 
@@ -235,6 +246,7 @@ async def _measure_sample(
     turn_detection: TurnDetection,
     server_vad_threshold: float,
     server_vad_silence_ms: int,
+    input_chunk_ms: int,
     mode: Mode,
     timeout_s: float,
 ) -> dict[str, float | str | bool | None]:
@@ -251,7 +263,12 @@ async def _measure_sample(
     await llm.open_session()
     try:
         waiter = asyncio.create_task(_wait_for_first_audio(llm, timeout_s=timeout_s))
-        audio_end_at = await _stream_pcm_realtime(llm, pcm, sample_rate=cfg.SAMPLE_RATE)
+        audio_end_at = await _stream_pcm_realtime(
+            llm,
+            pcm,
+            sample_rate=cfg.SAMPLE_RATE,
+            input_chunk_ms=input_chunk_ms,
+        )
         if mode == "forced_commit":
             if llm._conn is None:  # pragma: no cover - defensive live-only guard
                 raise RuntimeError("Realtime connection was not opened")
@@ -270,6 +287,7 @@ async def _measure_sample(
         eagerness=eagerness,
         turn_detection=turn_detection,
         server_vad_threshold=server_vad_threshold,
+        input_chunk_ms=input_chunk_ms,
         mode=mode,
         audio_end_at=audio_end_at,
         speech_stopped_at=speech_stopped_at,
@@ -298,6 +316,7 @@ async def _run(args: argparse.Namespace) -> None:
                     turn_detection=args.turn_detection,
                     server_vad_threshold=args.server_vad_threshold,
                     server_vad_silence_ms=args.server_vad_silence_ms,
+                    input_chunk_ms=args.input_chunk_ms,
                     mode=args.mode,
                     timeout_s=args.timeout_s,
                 )
@@ -311,6 +330,7 @@ async def _run(args: argparse.Namespace) -> None:
         f"semantic_vad eagerness={args.eagerness}; "
         f"server_vad threshold={args.server_vad_threshold}; "
         f"server_vad silence={args.server_vad_silence_ms} ms. "
+        f"Input chunk={args.input_chunk_ms} ms. "
         "Metric is final source-audio chunk sent to first response audio delta; "
         "raw transcripts are not recorded."
     )
@@ -343,6 +363,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--server-vad-silence-ms", type=int, default=300)
     parser.add_argument("--server-vad-threshold", type=float, default=0.5)
+    parser.add_argument("--input-chunk-ms", type=int, default=20)
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--timeout-s", type=float, default=15.0)
     parser.add_argument(
