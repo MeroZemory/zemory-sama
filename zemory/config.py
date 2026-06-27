@@ -1,13 +1,16 @@
-"""Unified configuration with profile switching (realtime | local).
+"""Unified configuration with profile switching.
 
 Loads from, in order of precedence:
   1. Environment variables (ZEMORY_* prefix, plus legacy OPENAI_API_KEY / ELEVENLABS_API_KEY)
   2. config.toml at repo root (if present)
   3. Defaults in this module
 
-Two profiles:
-- ``realtime``: OpenAI Realtime API with server_vad (fast path, default)
-- ``local``:    Local Silero VAD + Whisper STT + Realtime LLM (customizable)
+Canonical profiles:
+- ``realtime_audio``: OpenAI Realtime GA audio-in/audio-out (default)
+- ``realtime_text_external_tts``: Realtime text output + external TTS
+- ``local_cascade``: Local Silero VAD + Whisper STT + Realtime text LLM
+
+Legacy aliases ``realtime`` and ``local`` are accepted and normalized.
 """
 
 from __future__ import annotations
@@ -18,14 +21,37 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(_REPO_ROOT / ".env")
 
 
-ProfileName = Literal["realtime", "local"]
+ProfileName = Literal[
+    "realtime_audio",
+    "realtime_text_external_tts",
+    "local_cascade",
+    "research_full_duplex",
+]
+
+_PROFILE_ALIASES = {
+    "realtime": "realtime_audio",
+    "local": "local_cascade",
+}
+
+
+def canonical_profile(profile: str) -> ProfileName:
+    """Return the canonical profile name, accepting legacy aliases."""
+    normalized = _PROFILE_ALIASES.get(profile, profile)
+    if normalized not in {
+        "realtime_audio",
+        "realtime_text_external_tts",
+        "local_cascade",
+        "research_full_duplex",
+    }:
+        raise ValueError(f"Unknown profile: {profile!r}")
+    return normalized  # type: ignore[return-value]
 
 
 def _load_toml() -> dict:
@@ -61,13 +87,17 @@ class TTSSettings(BaseSettings):
 class RealtimeSession(BaseSettings):
     """OpenAI Realtime API session parameters."""
 
-    model: str = "gpt-4o-mini-realtime-preview"
-    temperature: float = 0.8
+    model: str = "gpt-realtime-2"
+    voice: str = "marin"
+    reasoning_effort: Literal["low", "medium", "high"] = "low"
 
-    # Realtime profile: server_vad enabled (native turn detection)
+    # Realtime GA profile: semantic_vad is the default, server_vad is fallback.
+    turn_detection: Literal["semantic_vad", "server_vad"] = "semantic_vad"
+    semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "medium"
     server_vad_threshold: float = 0.5
     server_vad_prefix_padding_ms: int = 300
     server_vad_silence_duration_ms: int = 700  # Korean-tuned (was 500)
+    server_vad_idle_timeout_ms: int | None = None
 
     # Local profile: Realtime STT disabled (we inject text)
     transcription_model: str = "gpt-4o-mini-transcribe"
@@ -87,7 +117,14 @@ class Settings(BaseSettings):
     )
 
     # --- profile ---
-    profile: ProfileName = Field(default=_TOML.get("profile", {}).get("name", "realtime"))
+    profile: ProfileName = Field(
+        default=_TOML.get("profile", {}).get("name", "realtime_audio")
+    )
+
+    @field_validator("profile", mode="before")
+    @classmethod
+    def _canonicalize_profile(cls, value: object) -> str:
+        return canonical_profile(str(value))
 
     # --- audio ---
     sample_rate: int = 24_000
@@ -99,6 +136,21 @@ class Settings(BaseSettings):
 
     # --- context ---
     max_context_turns: int = 10
+    memory_enabled: bool = Field(
+        default=_TOML.get("memory", {}).get("enabled", True)
+    )
+    memory_path: str = Field(
+        default=_TOML.get("memory", {}).get("path", ".zemory/memory.sqlite3")
+    )
+    memory_recall_deadline_ms: int = Field(
+        default=_TOML.get("memory", {}).get("recall_deadline_ms", 80)
+    )
+    memory_recall_limit: int = Field(
+        default=_TOML.get("memory", {}).get("recall_limit", 5)
+    )
+    context_tool_deadline_ms: int = Field(
+        default=_TOML.get("context", {}).get("tool_deadline_ms", 200)
+    )
 
     # --- STT (local profile) ---
     stt_model: str = "gpt-4o-transcribe"
@@ -148,7 +200,11 @@ if not settings.openai_api_key.get_secret_value():
         "Copy .env.example to .env and add your API key."
     )
 
-if not settings.elevenlabs_api_key.get_secret_value():
+if (
+    canonical_profile(settings.profile)
+    in {"realtime_text_external_tts", "local_cascade"}
+    and not settings.elevenlabs_api_key.get_secret_value()
+):
     raise SystemExit("Error: ELEVENLABS_API_KEY is not set.")
 
 
@@ -169,36 +225,54 @@ INSTRUCTIONS = (
 def build_session_config() -> dict:
     """Build Realtime session config based on active profile."""
     realtime = settings.realtime
+    profile = canonical_profile(settings.profile)
 
-    if settings.profile == "realtime":
-        # Fast path: server VAD + auto response
-        return {
-            "modalities": ["text"],
-            "instructions": INSTRUCTIONS,
-            "input_audio_format": "pcm16",
-            "input_audio_transcription": {"model": realtime.transcription_model},
-            "turn_detection": {
+    def _turn_detection() -> dict:
+        if realtime.turn_detection == "semantic_vad":
+            return {
+                "type": "semantic_vad",
+                "eagerness": realtime.semantic_vad_eagerness,
+                "create_response": True,
+                "interrupt_response": settings.enable_barge_in,
+            }
+
+        server_vad = {
                 "type": "server_vad",
                 "threshold": realtime.server_vad_threshold,
                 "prefix_padding_ms": realtime.server_vad_prefix_padding_ms,
                 "silence_duration_ms": realtime.server_vad_silence_duration_ms,
-                # Always let the server kick off a response on speech_stopped.
-                # Speculative correction runs in parallel: if it matches the
-                # raw transcript the already-streaming response is kept; if
-                # it differs, the orchestrator cancels + replaces.
                 "create_response": True,
                 "interrupt_response": settings.enable_barge_in,
-            },
-            "temperature": realtime.temperature,
         }
-    else:
-        # Local profile: we run VAD/STT and inject text; turn_detection disabled
-        return {
-            "modalities": ["text"],
-            "instructions": INSTRUCTIONS,
-            "turn_detection": None,
-            "temperature": realtime.temperature,
+        if realtime.server_vad_idle_timeout_ms is not None:
+            server_vad["idle_timeout_ms"] = realtime.server_vad_idle_timeout_ms
+        return server_vad
+
+    output_modalities = ["audio"] if profile == "realtime_audio" else ["text"]
+    audio: dict = {
+        "input": {
+            "format": {"type": "audio/pcm", "rate": settings.sample_rate},
+            "turn_detection": (
+                _turn_detection()
+                if profile in {"realtime_audio", "realtime_text_external_tts"}
+                else None
+            ),
         }
+    }
+    if profile == "realtime_audio":
+        audio["output"] = {
+            "format": {"type": "audio/pcm", "rate": settings.sample_rate},
+            "voice": realtime.voice,
+        }
+
+    return {
+        "type": "realtime",
+        "model": realtime.model,
+        "instructions": INSTRUCTIONS,
+        "output_modalities": output_modalities,
+        "audio": audio,
+        "reasoning": {"effort": realtime.reasoning_effort},
+    }
 
 
 # ---------------------------------------------------------------------------

@@ -119,28 +119,39 @@ def build_pipeline(
     if/else is clearer given only two profiles.
     """
     # Late imports break a circular dependency (providers → config → ...).
+    from zemory.config import canonical_profile
     from zemory.providers.llm.openai_realtime import OpenAIRealtimeLLM
     from zemory.providers.stt.null import NullSTT
     from zemory.providers.stt.openai_whisper import WhisperSTT
     from zemory.providers.tts.elevenlabs import ElevenLabsTTS
+    from zemory.providers.tts.null import NullTTS
     from zemory.providers.turn.server_vad import ServerVADTurnDetector
     from zemory.providers.turn.silero import SileroTurnDetector
 
+    profile = canonical_profile(profile)
     llm = OpenAIRealtimeLLM(api_key=openai_api_key)
-    tts = ElevenLabsTTS(api_key=elevenlabs_api_key)
 
-    if profile == "realtime":
+    if profile == "realtime_audio":
         return PipelineBundle(
             turn=ServerVADTurnDetector(llm=llm),
             stt=NullSTT(),
             llm=llm,
-            tts=tts,
+            tts=NullTTS(),
         )
-    elif profile == "local":
+    if profile == "realtime_text_external_tts":
+        return PipelineBundle(
+            turn=ServerVADTurnDetector(llm=llm),
+            stt=NullSTT(),
+            llm=llm,
+            tts=ElevenLabsTTS(api_key=elevenlabs_api_key),
+        )
+    if profile == "local_cascade":
         return PipelineBundle(
             turn=SileroTurnDetector(),
             stt=WhisperSTT(api_key=openai_api_key),
             llm=llm,
-            tts=tts,
+            tts=ElevenLabsTTS(api_key=elevenlabs_api_key),
         )
+    if profile == "research_full_duplex":
+        raise NotImplementedError("research_full_duplex is a design placeholder")
     raise ValueError(f"Unknown profile: {profile!r}")

@@ -21,9 +21,14 @@ _log = get_logger(__name__)
 
 
 class SileroTurnDetector:
-    def __init__(self) -> None:
-        self._vad = SileroVAD(onnx=True)
-        self._sm = VADStateMachine()
+    def __init__(
+        self,
+        *,
+        vad: SileroVAD | None = None,
+        state_machine: VADStateMachine | None = None,
+    ) -> None:
+        self._vad = vad or SileroVAD(onnx=True)
+        self._sm = state_machine or VADStateMachine()
         self._vad_buf = np.array([], dtype=np.int16)
         self._pre_buffer: deque[bytes] = deque(maxlen=settings.vad.pre_buffer_chunks)
         self._audio_chunks: list[bytes] = []

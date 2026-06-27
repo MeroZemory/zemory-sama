@@ -25,10 +25,12 @@ chat = ["pytchat>=0.5"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "pytest-cov>=7.0",
     "ruff>=0.5",
 ]
 
 [tool.pytest.ini_options]
+addopts = "--cov=zemory --cov-report=term-missing"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
@@ -43,3 +45,19 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+
+[tool.coverage.run]
+omit = [
+    "zemory/__main__.py",
+    "zemory/audio.py",
+    "zemory/client.py",
+    "zemory/orchestrator.py",
+    "zemory/providers/stt/openai_whisper.py",
+    "zemory/providers/tts/elevenlabs.py",
+    "zemory/providers/turn/silero.py",
+    "zemory/tts.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

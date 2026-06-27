@@ -2,6 +2,18 @@
 # Values here are overridden by ZEMORY_* environment variables.
 
 [profile]
-# "realtime" (default) — OpenAI Realtime API with server_vad. Fast path.
-# "local"             — Local Silero VAD + Whisper STT + Realtime LLM.
-name = "realtime"
+# "realtime_audio"             — OpenAI Realtime GA audio-in/audio-out. Default.
+# "realtime_text_external_tts" — Realtime text output + external TTS.
+# "local_cascade"              — Local Silero VAD + Whisper STT + Realtime text LLM.
+#
+# Legacy aliases "realtime" and "local" are still accepted.
+name = "realtime_audio"
+
+[memory]
+enabled = true
+path = ".zemory/memory.sqlite3"
+recall_deadline_ms = 80
+recall_limit = 5
+
+[context]
+tool_deadline_ms = 200

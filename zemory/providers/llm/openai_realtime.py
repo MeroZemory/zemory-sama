@@ -22,10 +22,10 @@ _log = get_logger(__name__)
 
 
 class OpenAIRealtimeLLM:
-    """Adapter over :class:`openai.AsyncOpenAI` beta realtime connect."""
+    """Adapter over :class:`openai.AsyncOpenAI` Realtime GA connect."""
 
-    def __init__(self, api_key: str) -> None:
-        self._client = AsyncOpenAI(api_key=api_key)
+    def __init__(self, api_key: str, client: Any | None = None) -> None:
+        self._client = client or AsyncOpenAI(api_key=api_key)
         self._conn_cm = None
         self._conn = None
         self._opened = asyncio.Event()
@@ -36,7 +36,7 @@ class OpenAIRealtimeLLM:
     # Lifecycle
     # ------------------------------------------------------------------
     async def open_session(self) -> None:
-        self._conn_cm = self._client.beta.realtime.connect(model=settings.realtime.model)
+        self._conn_cm = self._client.realtime.connect(model=settings.realtime.model)
         self._conn = await self._conn_cm.__aenter__()
         await self._conn.session.update(session=build_session_config())
         self._pump_task = asyncio.create_task(self._pump_events())
@@ -95,6 +95,18 @@ class OpenAIRealtimeLLM:
         )
         await self._conn.response.create()
 
+    async def record_system_note(self, text: str) -> None:
+        """Add a non-response context note to the current Realtime conversation."""
+        if not self._conn:
+            return
+        await self._conn.conversation.item.create(
+            item={
+                "type": "message",
+                "role": "system",
+                "content": [{"type": "input_text", "text": text}],
+            }
+        )
+
     async def cancel_current(self) -> None:
         """Ask Realtime to abort the in-flight response."""
         if not self._conn:
@@ -150,7 +162,11 @@ class OpenAIRealtimeLLM:
     def _normalize(event: Any) -> dict | None:
         t = getattr(event, "type", None)
         if t == "session.created":
-            return {"type": "session.created", "session_id": event.session.id}
+            session = getattr(event, "session", None)
+            return {
+                "type": "session.created",
+                "session_id": getattr(session, "id", None),
+            }
         if t == "session.updated":
             return {"type": "session.updated"}
         if t == "input_audio_buffer.speech_started":
@@ -167,17 +183,40 @@ class OpenAIRealtimeLLM:
             item = getattr(event, "item", None)
             item_id = getattr(item, "id", None) if item else None
             return {"type": "conversation.item.created", "item_id": item_id}
-        if t == "response.text.delta":
+        if t in {"response.output_text.delta", "response.text.delta"}:
             return {"type": "text.delta", "delta": event.delta}
-        if t == "response.text.done":
+        if t in {"response.output_text.done", "response.text.done"}:
             return {"type": "text.done"}
+        if t in {"response.output_audio.delta", "response.audio.delta"}:
+            return {
+                "type": "audio.delta",
+                "audio": base64.b64decode(event.delta),
+            }
+        if t in {"response.output_audio.done", "response.audio.done"}:
+            return {"type": "audio.done"}
+        if t in {
+            "response.output_audio_transcript.delta",
+            "response.audio_transcript.delta",
+        }:
+            return {"type": "audio.transcript.delta", "delta": event.delta}
+        if t in {
+            "response.output_audio_transcript.done",
+            "response.audio_transcript.done",
+        }:
+            return {"type": "audio.transcript.done"}
         if t == "response.done":
-            usage = getattr(event.response, "usage", None)
-            status = getattr(event.response, "status", None)
+            response = getattr(event, "response", None)
+            usage = getattr(response, "usage", None)
+            status = getattr(response, "status", None)
+            total_tokens = None
+            if isinstance(usage, dict):
+                total_tokens = usage.get("total_tokens")
+            elif usage is not None:
+                total_tokens = getattr(usage, "total_tokens", None)
             return {
                 "type": "response.done",
                 "status": status,
-                "usage": {"total_tokens": usage.total_tokens} if usage else None,
+                "usage": {"total_tokens": total_tokens} if total_tokens else None,
             }
         if t == "error":
             return {"type": "error", "error": getattr(event, "error", "unknown")}

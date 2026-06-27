@@ -17,20 +17,48 @@ from __future__ import annotations
 
 import asyncio
 import time
+from pathlib import Path
 
 from openai import AsyncOpenAI
 
 from zemory.audio import MicrophoneStream, SpeakerStream, generate_beep_pcm
-from zemory.config import ELEVENLABS_API_KEY, OPENAI_API_KEY, settings
+from zemory.config import (
+    ELEVENLABS_API_KEY,
+    OPENAI_API_KEY,
+    canonical_profile,
+    settings,
+)
 from zemory.observability import configure_logging, get_logger, metrics
 from zemory.pipeline.chunker import SentenceChunker
+from zemory.pipeline.context import (
+    AsyncContextScheduler,
+    SQLiteMemoryStore,
+    TranscriptLedger,
+)
 from zemory.pipeline.interrupt_bus import InterruptBus
+from zemory.pipeline.realtime_events import handle_speech_started
 from zemory.pipeline.transcript_corrector import TranscriptCorrector
 from zemory.pipeline.tts_manager import TTSTaskManager
 from zemory.providers.base import build_pipeline
 from zemory.state import Phase, StateMachine
 
 _log = get_logger("orchestrator")
+
+
+def build_context_scheduler() -> AsyncContextScheduler:
+    """Build the runtime context scheduler from settings."""
+    memory = None
+    if settings.memory_enabled:
+        memory_path = Path(settings.memory_path).expanduser()
+        if not memory_path.is_absolute():
+            memory_path = Path.cwd() / memory_path
+        memory = SQLiteMemoryStore(memory_path)
+    return AsyncContextScheduler(
+        memory=memory,
+        memory_deadline_ms=settings.memory_recall_deadline_ms,
+        tool_deadline_ms=settings.context_tool_deadline_ms,
+        memory_limit=settings.memory_recall_limit,
+    )
 
 
 class TurnTimer:
@@ -70,6 +98,7 @@ async def run() -> None:
         openai_api_key=OPENAI_API_KEY,
         elevenlabs_api_key=ELEVENLABS_API_KEY,
     )
+    profile = canonical_profile(settings.profile)
 
     mic = MicrophoneStream(loop)
     speaker = SpeakerStream(loop)
@@ -78,16 +107,20 @@ async def run() -> None:
     turn_seq = 0
     timer = TurnTimer(turn_seq)
     item_ids: list[str] = []
+    ledger = TranscriptLedger(max_turns=settings.max_context_turns * 2)
+    context_scheduler = build_context_scheduler()
 
     async def on_partial_abort(partial: str) -> None:
         """Record interrupted assistant text as history for the next turn."""
-        # We can't inject "assistant" into Realtime after a cancel without risking
-        # double-responses; instead emit a system-note so the model sees context.
+        ledger.record_assistant(partial, interrupted=True)
         note = f"(You were interrupted while saying: \"{partial[:200]}\")"
-        await pipeline.llm.send_user_text(note, injections=[])
+        ledger.record_system(note)
+        record = getattr(pipeline.llm, "record_system_note", None)
+        if callable(record):
+            await record(note)
         _log.info("interrupt.partial_recorded", chars=len(partial))
 
-    interrupt_bus = InterruptBus(state, speaker, on_partial=None)
+    interrupt_bus = InterruptBus(state, speaker, on_partial=on_partial_abort)
 
     # Optional transcript corrector (context-aware ASR fix-up).
     corrector: TranscriptCorrector | None = None
@@ -253,7 +286,7 @@ async def run() -> None:
                 #     devices without hardware AEC)
                 #   - barge-in OFF: suppress mic entirely → speaker audio
                 #     leaking into mic cannot be mis-transcribed as user input
-                if settings.profile == "realtime" and settings.enable_barge_in:
+                if profile in {"realtime_audio", "realtime_text_external_tts"} and settings.enable_barge_in:
                     await pipeline.turn.feed(pcm)
                 # else: drop frame
             else:
@@ -261,7 +294,7 @@ async def run() -> None:
 
     async def turn_event_consumer() -> None:
         """Local profile only: speech_end → STT → LLM text inject."""
-        if settings.profile != "local":
+        if profile != "local_cascade":
             return
         while True:
             event = await pipeline.turn.events.get()
@@ -301,7 +334,9 @@ async def run() -> None:
                 _log.info("user.text", text=text,
                           raw=raw_text if raw_text != text else None)
                 tts_manager.reset_for_new_turn()
-                await pipeline.llm.send_user_text(text, injections=[])
+                ledger.record_user(text)
+                context = await context_scheduler.gather_for_turn(text)
+                await pipeline.llm.send_user_text(text, injections=context.injections)
                 # Reset local VAD state for the next turn
                 from zemory.providers.turn.silero import SileroTurnDetector
                 if isinstance(pipeline.turn, SileroTurnDetector):
@@ -317,12 +352,7 @@ async def run() -> None:
                 _log.info("session.configured")
 
             elif t == "input.speech_started":
-                # Realtime profile barge-in opportunity
-                if state.phase == Phase.RESPONDING:
-                    interrupt_bus.reset_partial()
-                    await interrupt_bus.trigger("realtime_speech_started")
-                else:
-                    await state.transition(Phase.ACTIVE)
+                await handle_speech_started(state, interrupt_bus)
 
             elif t == "input.speech_stopped":
                 # Realtime: user finished — move to RESPONDING and time turn
@@ -357,6 +387,8 @@ async def run() -> None:
                     )
 
                 _log.info("user.text", text=raw_text)
+                if raw_text:
+                    ledger.record_user(raw_text)
 
             elif t == "conversation.item.created":
                 item_id = event.get("item_id")
@@ -370,18 +402,42 @@ async def run() -> None:
                 print(delta, end="", flush=True)
                 interrupt_bus.record_partial(delta)
                 gen_assistant_text[0] += delta
-                for sentence in gen_chunker[0].add(delta):
-                    tts_manager.submit(sentence)
+                if profile != "realtime_audio":
+                    for sentence in gen_chunker[0].add(delta):
+                        tts_manager.submit(sentence)
 
             elif t == "text.done":
                 print()
-                tail = gen_chunker[0].flush()
-                if tail:
-                    tts_manager.submit(tail)
+                if profile != "realtime_audio":
+                    tail = gen_chunker[0].flush()
+                    if tail:
+                        tts_manager.submit(tail)
                 # Feed the full assistant response into the corrector's
                 # rolling history so next-turn correction has context.
                 if corrector is not None and gen_assistant_text[0]:
                     corrector.record_assistant(gen_assistant_text[0])
+                if gen_assistant_text[0]:
+                    ledger.record_assistant(gen_assistant_text[0])
+
+            elif t == "audio.delta":
+                if timer.first_tts_byte_ts is None:
+                    timer.first_tts_byte_ts = time.monotonic()
+                audio = event.get("audio", b"")
+                if audio:
+                    await speaker.queue.put(audio)
+
+            elif t == "audio.transcript.delta":
+                delta = event.get("delta", "")
+                print(delta, end="", flush=True)
+                interrupt_bus.record_partial(delta)
+                gen_assistant_text[0] += delta
+
+            elif t == "audio.transcript.done":
+                print()
+                if corrector is not None and gen_assistant_text[0]:
+                    corrector.record_assistant(gen_assistant_text[0])
+                if gen_assistant_text[0]:
+                    ledger.record_assistant(gen_assistant_text[0])
 
             elif t == "response.done":
                 # If the response was cancelled (speculative abort or
