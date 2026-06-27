@@ -130,8 +130,9 @@ def _write_live_benchmark_artifacts(
         "title": title,
         "source_note": source_note,
         "turn_count": 0,
+        "total_event_count": len(events),
+        "invalid_latency_count": len(events),
         "early_cutoff_count": early_cutoff_count,
-        "total_events": len(events),
     }
     (out_dir / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
