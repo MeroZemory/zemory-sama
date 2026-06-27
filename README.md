@@ -225,7 +225,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 73 tests passing.
+- 75 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 86%.
 
@@ -236,6 +236,8 @@ Runtime logs emit `turn.complete` events with timing fields such as
 In the CLI runtime, `total_ms` is measured to the first output callback that
 actually consumes response audio, not just the moment audio enters the local
 speaker buffer.
+The microphone and speaker streams request the device's low-latency mode in
+addition to the 10 ms output callback block.
 
 Generate README-ready artifacts from a local runtime log:
 
