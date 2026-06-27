@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from zemory.audio import generate_beep_pcm
+from zemory.audio import generate_beep_pcm, output_block_size
 
 
 def test_beep_has_expected_length():
@@ -50,3 +50,7 @@ def test_volume_clamped_to_one():
     samples = np.frombuffer(pcm, dtype=np.int16)
     assert samples.max() <= 32767
     assert samples.min() >= -32768
+
+
+def test_output_block_size_uses_20ms_chunks_by_default():
+    assert output_block_size(sample_rate=24_000) == 480
