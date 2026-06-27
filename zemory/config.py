@@ -90,6 +90,7 @@ class RealtimeSession(BaseSettings):
     model: str = "gpt-realtime-2"
     voice: str = "marin"
     reasoning_effort: Literal["low", "medium", "high"] = "low"
+    max_response_output_tokens: int | Literal["inf"] = 512
 
     # Fast path: server_vad with a short silence window wins local live fixtures.
     # semantic_vad remains available when more conservative turn-taking is desired.
@@ -274,6 +275,7 @@ def build_session_config() -> dict:
         "output_modalities": output_modalities,
         "audio": audio,
         "reasoning": {"effort": realtime.reasoning_effort},
+        "max_response_output_tokens": realtime.max_response_output_tokens,
     }
 
 
