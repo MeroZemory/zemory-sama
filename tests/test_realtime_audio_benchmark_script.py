@@ -9,6 +9,7 @@ from scripts.bench_realtime_audio_fixture import (
     _commit_and_trigger_response,
     _event_from_timings,
     _parse_args,
+    _stream_pcm_until_local_endpoint,
     _stream_pcm_realtime,
     _write_live_benchmark_artifacts,
 )
@@ -144,6 +145,8 @@ def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
             "out",
             "--input-chunk-ms",
             "10",
+            "--mode",
+            "local_endpoint_commit",
             "--turn-detection",
             "none",
             "--play-output",
@@ -151,6 +154,7 @@ def test_parse_args_accepts_input_chunk_ms_and_play_output() -> None:
     )
 
     assert args.input_chunk_ms == 10
+    assert args.mode == "local_endpoint_commit"
     assert args.turn_detection == "none"
     assert args.play_output is True
 
@@ -203,3 +207,31 @@ async def test_forced_commit_keeps_source_audio_end_timestamp() -> None:
     assert audio_end_at == pytest.approx(123.4)
     assert llm._conn.input_audio_buffer.committed is True
     assert llm.triggered is True
+
+
+async def test_stream_pcm_until_local_endpoint_waits_after_source_audio() -> None:
+    class FakeTurnDetector:
+        def __init__(self) -> None:
+            self.events: asyncio.Queue[str] = asyncio.Queue()
+            self.fed: list[bytes] = []
+
+        async def feed(self, chunk: bytes) -> None:
+            self.fed.append(chunk)
+            if len(self.fed) == 3:
+                await self.events.put("speech_end")
+
+    turn = FakeTurnDetector()
+
+    audio_end_at, speech_stopped_at = await _stream_pcm_until_local_endpoint(
+        turn,
+        b"a" * 960,
+        sample_rate=24_000,
+        input_chunk_ms=10,
+        silence_timeout_s=1.0,
+        sleep=lambda _duration: None,
+    )
+
+    assert audio_end_at is not None
+    assert speech_stopped_at is not None
+    assert speech_stopped_at >= audio_end_at
+    assert [len(chunk) for chunk in turn.fed] == [480, 480, 480]
