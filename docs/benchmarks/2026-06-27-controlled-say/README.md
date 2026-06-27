@@ -8,8 +8,11 @@ Six synthetic Korean/English utterances generated with macOS say, streamed direc
 | turn min | 819.1 ms |
 | turn mean | 960.9 ms |
 | turn p50 | 920.4 ms |
+| turn p90 | 1202.8 ms |
 | turn p95 | 1202.8 ms |
-| turn max | 1202.8 ms |
+| representative max | 1202.8 ms |
+| extreme outliers | 0 |
+| observed max, diagnostic | 1202.8 ms |
 | interrupt count | 0 |
 | interrupt p95 | n/a |
 

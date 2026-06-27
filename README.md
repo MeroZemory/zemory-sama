@@ -9,9 +9,9 @@ response quickly, handling interruptions, and keeping the conversation state
 coherent over long sessions.
 
 The default runtime uses OpenAI Realtime GA audio-in/audio-out with
-`gpt-realtime-2`, `semantic_vad`, and direct PCM playback. External TTS and
-local VAD/STT remain available as explicit profiles rather than the default
-fast path.
+`gpt-realtime-2`, low-latency `server_vad` at a 200 ms silence window, and
+direct PCM playback. `semantic_vad`, external TTS, and local VAD/STT remain
+available as explicit choices rather than the default fast path.
 
 ## One-Prompt Setup For Coding Agents
 
@@ -38,7 +38,8 @@ Steps:
 ## What It Does
 
 - Streams microphone PCM to OpenAI Realtime and plays audio deltas directly.
-- Uses `semantic_vad` by default for more natural turn endings.
+- Uses a 200 ms `server_vad` default for the fastest measured stable turn
+  endings; `semantic_vad` is still configurable for more conservative turns.
 - Mirrors the user's language by default, so Korean and English conversation
   both stay natural without switching profiles.
 - Supports barge-in: clear speaker output, cancel pending TTS work, cancel the
@@ -58,9 +59,12 @@ committed because they can contain private transcript text.
 
 | Run | Fixture | Key result | Artifact |
 | --- | --- | --- | --- |
-| Manual live session | 28 real conversation turns | turn p50 816.0 ms, p95 1698.0 ms, interrupt p95 1.5 ms | [docs/benchmarks/2026-06-27-local-manual](docs/benchmarks/2026-06-27-local-manual) |
-| Controlled audio samples | 6 Korean/English macOS `say` clips | input commit to first audio p50 920.4 ms, p95 1202.8 ms | [docs/benchmarks/2026-06-27-controlled-say](docs/benchmarks/2026-06-27-controlled-say) |
+| Optimized live fixture | 4 Korean/English macOS `say` clips, server VAD 200 ms | source-audio end to first response audio p50 1051.5 ms, representative max 1350.5 ms, no outliers | [docs/benchmarks/2026-06-27-optimized-server-vad-200](docs/benchmarks/2026-06-27-optimized-server-vad-200) |
+| Manual live session | 28 real conversation turns | turn p50 816.0 ms, representative max 1698.0 ms, 1 extreme outlier kept as diagnostic | [docs/benchmarks/2026-06-27-local-manual](docs/benchmarks/2026-06-27-local-manual) |
+| Controlled audio samples | 6 Korean/English macOS `say` clips | input commit to first audio p50 920.4 ms, representative max 1202.8 ms | [docs/benchmarks/2026-06-27-controlled-say](docs/benchmarks/2026-06-27-controlled-say) |
 | Reference setup comparison | 6 major AI VTuber / realtime voice repos | all dependency setups completed with project-specific environments; no invented cross-repo latency numbers | [docs/benchmarks/2026-06-27-comparison](docs/benchmarks/2026-06-27-comparison) |
+
+![Optimized live latency](docs/benchmarks/2026-06-27-optimized-server-vad-200/latency.svg)
 
 ![Manual live latency](docs/benchmarks/2026-06-27-local-manual/latency.svg)
 
@@ -93,7 +97,7 @@ Not implemented yet:
 
 | Profile | Default | Pipeline | Use case |
 | --- | --- | --- | --- |
-| `realtime_audio` | Yes | OpenAI Realtime GA audio input/output, `semantic_vad`, `NullTTS` | Lowest-latency voice conversation |
+| `realtime_audio` | Yes | OpenAI Realtime GA audio input/output, `server_vad` 200 ms, `NullTTS` | Lowest-latency voice conversation |
 | `realtime_text_external_tts` | No | Realtime text output, sentence chunking, external TTS | Character voice quality over minimum latency |
 | `local_cascade` | No | Silero VAD, Whisper STT, Realtime text LLM, external TTS | Local turn detection fallback and development |
 | `research_full_duplex` | No | Placeholder | Future full-duplex research track |
@@ -218,7 +222,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 65 tests passing.
+- 71 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 86%.
 
@@ -234,6 +238,15 @@ uv run python scripts/build_benchmark_artifacts.py \
   --log .zemory/run.log \
   --out docs/benchmarks/local-run \
   --title "zemory-sama realtime_audio local benchmark"
+```
+
+Run a live generated-audio benchmark against OpenAI Realtime:
+
+```bash
+uv run python scripts/bench_realtime_audio_fixture.py \
+  --out docs/benchmarks/local-live-fixture \
+  --turn-detection server_vad \
+  --server-vad-silence-ms 200
 ```
 
 Check a JSONL export against release thresholds:

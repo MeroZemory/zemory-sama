@@ -1,0 +1,15 @@
+{
+  "interrupt_count": 0,
+  "interrupt_p95_ms": null,
+  "source_note": "2 macOS say fixtures streamed as realtime 24 kHz PCM. Mode=semantic_vad; semantic_vad eagerness=high. Metric is final source-audio chunk sent to first response audio delta; raw transcripts are not recorded.",
+  "title": "zemory-sama high semantic_vad live benchmark",
+  "turn_count": 2,
+  "turn_extreme_outlier_count": 0,
+  "turn_max_ms": 2660.2,
+  "turn_mean_ms": 2272.95,
+  "turn_min_ms": 1885.7,
+  "turn_p50_ms": 1885.7,
+  "turn_p90_ms": 2660.2,
+  "turn_p95_ms": 2660.2,
+  "turn_representative_max_ms": 2660.2
+}
