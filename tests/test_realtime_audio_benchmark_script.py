@@ -19,6 +19,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
         fixture="ko_short",
         voice="Yuna",
         eagerness="high",
+        turn_detection="semantic_vad",
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=100.25,
@@ -28,6 +29,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
     assert event["fixture"] == "ko_short"
     assert event["voice"] == "Yuna"
     assert event["eagerness"] == "high"
+    assert event["turn_detection"] == "semantic_vad"
     assert event["sample_source"] == "macos_say_semantic_vad"
     assert event["total_ms"] == pytest.approx(750.0)
     assert event["vad_wait_ms"] == pytest.approx(250.0)
