@@ -57,6 +57,8 @@ Benchmarks were refreshed on 2026-06-27 on macOS Apple Silicon with the
 `realtime_audio` profile. Artifacts are numeric-only; raw runtime logs are not
 committed because they can contain private transcript text.
 
+Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/reports/2026-06-28-final-comparison).
+
 | Run | Fixture | Key result | Artifact |
 | --- | --- | --- | --- |
 | Optimized live fixture | 4 Korean/English macOS `say` clips, server VAD 200 ms | source-audio end to first response audio p50 1051.5 ms, representative max 1350.5 ms, no outliers | [docs/benchmarks/2026-06-27-optimized-server-vad-200](docs/benchmarks/2026-06-27-optimized-server-vad-200) |

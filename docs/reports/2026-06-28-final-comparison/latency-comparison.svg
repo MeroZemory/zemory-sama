@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" role="img" aria-labelledby="title desc">
+  <title id="title">zemory-sama latency comparison</title>
+  <desc id="desc">P50 and representative max latency comparison across local zemory-sama benchmark runs.</desc>
+  <rect width="980" height="430" fill="#f8fafc"/>
+  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Latency comparison by run</text>
+  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">Bars show p50. Marker shows representative max after extreme-outlier separation.</text>
+  <line x1="258" y1="356" x2="900" y2="356" stroke="#cbd5e1"/>
+  <text x="258" y="378" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0 ms</text>
+  <text x="410" y="378" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">500</text>
+  <text x="575" y="378" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
+  <text x="740" y="378" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1500</text>
+  <text x="886" y="378" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12">
+    <text x="28" y="108" fill="#111827">Manual live, 28 turns</text>
+    <rect x="258" y="92" width="269" height="20" rx="3" fill="#10b981"/>
+    <line x1="818" y1="88" x2="818" y2="116" stroke="#065f46" stroke-width="3"/>
+    <text x="536" y="107" fill="#064e3b">p50 816 ms</text>
+    <text x="830" y="107" fill="#064e3b">rep max 1698 ms</text>
+
+    <text x="28" y="144" fill="#111827">Controlled say lower-bound</text>
+    <rect x="258" y="128" width="304" height="20" rx="3" fill="#34d399"/>
+    <line x1="655" y1="124" x2="655" y2="152" stroke="#047857" stroke-width="3"/>
+    <text x="571" y="143" fill="#064e3b">p50 920 ms</text>
+    <text x="667" y="143" fill="#064e3b">rep max 1203 ms</text>
+
+    <text x="28" y="180" fill="#111827">Optimized server_vad 200 ms</text>
+    <rect x="258" y="164" width="347" height="20" rx="3" fill="#22c55e"/>
+    <line x1="704" y1="160" x2="704" y2="188" stroke="#15803d" stroke-width="3"/>
+    <text x="614" y="179" fill="#14532d">p50 1052 ms</text>
+    <text x="716" y="179" fill="#14532d">rep max 1351 ms</text>
+
+    <text x="28" y="216" fill="#111827">server_vad 200 ms n8</text>
+    <rect x="258" y="200" width="409" height="20" rx="3" fill="#84cc16"/>
+    <line x1="756" y1="196" x2="756" y2="224" stroke="#3f6212" stroke-width="3"/>
+    <text x="676" y="215" fill="#365314">p50 1240 ms</text>
+    <text x="768" y="215" fill="#365314">rep max 1509 ms</text>
+
+    <text x="28" y="252" fill="#111827">server_vad 195 ms n8</text>
+    <rect x="258" y="236" width="397" height="20" rx="3" fill="#f59e0b"/>
+    <line x1="945" y1="232" x2="945" y2="260" stroke="#b45309" stroke-width="3"/>
+    <text x="664" y="251" fill="#78350f">p50 1203 ms</text>
+    <text x="800" y="251" fill="#78350f">tail 2082 ms</text>
+
+    <text x="28" y="288" fill="#111827">server_vad 193 ms n8</text>
+    <rect x="258" y="272" width="435" height="20" rx="3" fill="#f97316"/>
+    <line x1="836" y1="268" x2="836" y2="296" stroke="#c2410c" stroke-width="3"/>
+    <text x="702" y="287" fill="#7c2d12">p50 1319 ms</text>
+    <text x="848" y="287" fill="#7c2d12">tail 1750 ms</text>
+
+    <text x="28" y="324" fill="#111827">server_vad 300 ms</text>
+    <rect x="258" y="308" width="483" height="20" rx="3" fill="#94a3b8"/>
+    <line x1="900" y1="304" x2="900" y2="332" stroke="#475569" stroke-width="3"/>
+    <text x="750" y="323" fill="#334155">p50 1463 ms</text>
+    <text x="812" y="342" fill="#334155">tail 2318 ms clipped</text>
+  </g>
+  <rect x="28" y="392" width="16" height="10" fill="#22c55e"/>
+  <text x="52" y="401" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">kept/default path</text>
+  <rect x="182" y="392" width="16" height="10" fill="#f97316"/>
+  <text x="206" y="401" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">stable but rejected candidate</text>
+</svg>

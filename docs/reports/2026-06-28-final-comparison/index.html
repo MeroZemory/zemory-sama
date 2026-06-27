@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>zemory-sama Final Performance Comparison Report</title>
+  <style>
+    :root {
+      --ink: #111827;
+      --muted: #4b5563;
+      --line: #d1d5db;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --green: #16a34a;
+      --blue: #2563eb;
+      --amber: #d97706;
+      --red: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+    main {
+      width: min(1120px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+    header {
+      padding: 28px 0 24px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    h2 {
+      margin: 34px 0 14px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+    p { margin: 0 0 12px; }
+    a { color: #1d4ed8; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      padding: 5px 10px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 22px 0 6px;
+    }
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      min-height: 112px;
+    }
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.15;
+      margin-bottom: 4px;
+    }
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin: 16px 0;
+    }
+    .callout {
+      border-left: 4px solid var(--green);
+      background: #f0fdf4;
+      padding: 14px 16px;
+      margin: 18px 0;
+    }
+    .warning {
+      border-left-color: var(--amber);
+      background: #fffbeb;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 20px;
+      background: #fff;
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+    td.num, th.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .status-good { color: var(--green); font-weight: 700; }
+    .status-warn { color: var(--amber); font-weight: 700; }
+    .status-bad { color: var(--red); font-weight: 700; }
+    figure {
+      margin: 18px 0 26px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    figcaption {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    ul { margin-top: 8px; }
+    li { margin: 6px 0; }
+    code {
+      background: #eef2ff;
+      color: #3730a3;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.95em;
+    }
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 860px) {
+      main { width: min(100vw - 24px, 1120px); padding-top: 20px; }
+      .summary, .grid-two { grid-template-columns: 1fr; }
+      table { font-size: 12px; }
+      th, td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>zemory-sama 최종 성능 비교 보고서</h1>
+    <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
+    <div class="meta">
+      <span class="pill">작성일: 2026-06-28 KST</span>
+      <span class="pill">성능 기준 commit: <code>d6f53cb</code></span>
+      <span class="pill">검증: 75 tests, coverage 86.64%</span>
+      <span class="pill">보고서 범위: HTML + SVG</span>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="headline metrics">
+    <div class="metric">
+      <strong>816 ms</strong>
+      <span>수동 live 세션 28턴 p50. 실제 대화 로그에서 추출한 로컬 측정값.</span>
+    </div>
+    <div class="metric">
+      <strong>1051.5 ms</strong>
+      <span>최적화 후 macOS say live fixture p50. server_vad 200 ms, 4 samples.</span>
+    </div>
+    <div class="metric">
+      <strong>1509 ms</strong>
+      <span>server_vad 200 ms n8 stability sweep의 representative max.</span>
+    </div>
+    <div class="metric">
+      <strong>75 pass</strong>
+      <span>현재 regression suite. low-latency stream과 playback timing 계약 포함.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>1. 결론</h2>
+    <div class="callout">
+      <p><strong>현재 기본값은 유지한다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
+    </div>
+    <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
+    <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
+  </section>
+
+  <section>
+    <h2>2. 증거 경계</h2>
+    <div class="grid-two">
+      <div class="panel">
+        <h3>측정된 사실</h3>
+        <ul>
+          <li>zemory-sama benchmark artifacts under <code>docs/benchmarks/2026-06-27-*</code>.</li>
+          <li>local runtime code: <code>zemory/config.py</code>, <code>zemory/audio.py</code>, <code>zemory/orchestrator.py</code>.</li>
+          <li>test evidence: <code>uv run pytest tests/</code>, <code>ruff</code>, <code>compileall</code>.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>소스 기반 판단</h3>
+        <ul>
+          <li>OpenAI Realtime, VAD, latency guidance는 fast path 선택 근거다.</li>
+          <li>LiveKit Agents 소스는 200 ms silence와 Realtime turn detection 처리의 외부 reference다.</li>
+          <li>sounddevice 문서는 <code>latency="low"</code>가 interactive app에 맞다는 근거다.</li>
+        </ul>
+      </div>
+    </div>
+    <p>외부 VTuber/voice repo는 공통 fixture가 없어 latency 숫자를 부여하지 않았다. 대신 setup 가능성, 최신성, 아키텍처 패턴, zemory-sama에 반영할 수 있는 source-level lever를 비교했다.</p>
+  </section>
+
+  <section>
+    <h2>3. 로컬 latency 비교</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th class="num">Valid turns</th>
+          <th class="num">p50</th>
+          <th class="num">Representative max</th>
+          <th class="num">Raw max</th>
+          <th class="num">Outliers</th>
+          <th>해석</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-local-manual/">Manual live session</a></td>
+          <td class="num">28</td>
+          <td class="num">816.0 ms</td>
+          <td class="num">1698.0 ms</td>
+          <td class="num">7086.8 ms</td>
+          <td class="num">1</td>
+          <td>실제 대화 기준. raw max는 diagnostic outlier로 분리.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-controlled-say/">Controlled say lower-bound</a></td>
+          <td class="num">6</td>
+          <td class="num">920.4 ms</td>
+          <td class="num">1202.8 ms</td>
+          <td class="num">1202.8 ms</td>
+          <td class="num">0</td>
+          <td>input commit to first audio lower-bound fixture.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-optimized-server-vad-200/">Optimized server_vad 200 ms</a></td>
+          <td class="num">4</td>
+          <td class="num">1051.5 ms</td>
+          <td class="num">1350.5 ms</td>
+          <td class="num">1350.5 ms</td>
+          <td class="num">0</td>
+          <td class="status-good">초기 최적화 후 기준 run.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-server-vad-200-n8/">server_vad 200 ms n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1240.0 ms</td>
+          <td class="num">1509.0 ms</td>
+          <td class="num">5000.5 ms</td>
+          <td class="num">1</td>
+          <td class="status-good">안정성 sweep 기준 default 유지.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-server-vad-195-n8/">server_vad 195 ms n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1202.8 ms</td>
+          <td class="num">2081.8 ms</td>
+          <td class="num">2081.8 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">p50은 낮지만 tail이 악화되어 reject.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-server-vad-193-n8/">server_vad 193 ms n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1318.5 ms</td>
+          <td class="num">1750.0 ms</td>
+          <td class="num">1750.0 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">안정적이지만 200 ms보다 나은 결론이 아님.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-27-high-semantic-vad/">semantic_vad high</a></td>
+          <td class="num">2</td>
+          <td class="num">1885.7 ms</td>
+          <td class="num">2660.2 ms</td>
+          <td class="num">2660.2 ms</td>
+          <td class="num">0</td>
+          <td>더 보수적인 turn end. fastest default에는 부적합.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <figure>
+      <img src="latency-comparison.svg" alt="Latency comparison SVG">
+      <figcaption>p50은 bar, representative max는 marker다. 195 ms는 p50만 보면 매력적이지만 tail이 좋지 않다.</figcaption>
+    </figure>
+    <figure>
+      <img src="outlier-policy.svg" alt="Extreme outlier handling SVG">
+      <figcaption>raw max는 보존한다. 다만 severe outlier가 headline max를 대표하지 않게 representative max를 별도 산출한다.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>4. 레퍼런스 repo 비교</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th class="num">Stars</th>
+          <th>Freshness snapshot</th>
+          <th>이번 분석에서의 역할</th>
+          <th>zemory-sama 반영 여부</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://github.com/moeru-ai/airi">AIRI</a></td>
+          <td class="num">41,279</td>
+          <td>updated 2026-06-27, pushed 2026-06-27</td>
+          <td>가장 활발한 character platform reference. provider layering, web/native expansion 참고.</td>
+          <td>패턴 참고. latency core 숫자 비교는 하지 않음.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber">Open-LLM-VTuber</a></td>
+          <td class="num">11,943</td>
+          <td>updated 2026-06-27, pushed 2026-05-15</td>
+          <td>VTuber app architecture, interruption/provider boundary 참고.</td>
+          <td>전면 port보다 selectively adopt.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/livekit/agents">LiveKit Agents</a></td>
+          <td class="num">11,153</td>
+          <td>updated 2026-06-27, pushed 2026-06-27</td>
+          <td>Realtime voice agent framework source reference. OpenAI plugin, turn detection default 확인.</td>
+          <td>server_vad 200 ms 및 Realtime session shape 교차 확인.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/KoljaB/RealtimeVoiceChat">RealtimeVoiceChat</a></td>
+          <td class="num">3,776</td>
+          <td>updated 2026-06-27, pushed 2025-07-11</td>
+          <td>cascade voice chat, RealtimeSTT/TTS, interruption pattern 참고.</td>
+          <td>audio-native Realtime default가 더 빠른 방향으로 판단.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/kimjammer/Neuro">Neuro</a></td>
+          <td class="num">1,993</td>
+          <td>updated 2026-06-27, pushed 2025-01-17</td>
+          <td>memory, priority prompt injection, Twitch module reference.</td>
+          <td>latency core보다 async context/memory 설계에 반영.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/ardha27/AI-Waifu-Vtuber">AI-Waifu-Vtuber</a></td>
+          <td class="num">1,089</td>
+          <td>updated 2026-06-26, pushed 2026-05-31</td>
+          <td>legacy streaming/chat VTuber reference.</td>
+          <td>modern Realtime GA 기준으로는 낮은 우선순위.</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/StudioMovieGirl/AIRIS-VtuberAI">AIRIS-VtuberAI</a></td>
+          <td class="num">148</td>
+          <td>updated 2026-06-22, pushed 2026-01-03</td>
+          <td>local/GPU pipeline, sentence-level early TTS trigger reference.</td>
+          <td>external TTS profile에는 이미 sentence chunking/ordered playback 방향 반영.</td>
+        </tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="reference-landscape.svg" alt="Reference repository landscape SVG">
+      <figcaption>외부 repo의 stars는 adoption context다. 속도 순위로 해석하면 안 된다.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>5. 적용된 최적화 스택</h2>
+    <figure>
+      <img src="optimization-stack.svg" alt="Optimization stack SVG">
+      <figcaption>최적화는 모델, turn end, 측정 정책, playback, device I/O를 분리해서 적용했다.</figcaption>
+    </figure>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>현재 상태</th>
+          <th>근거</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Model path</td>
+          <td><code>gpt-realtime-2</code>, audio-native output, <code>reasoning.effort=low</code></td>
+          <td>OpenAI Realtime/voice guidance는 live audio session을 저지연 voice agent의 기본 선택지로 둔다.</td>
+        </tr>
+        <tr>
+          <td>Turn detection</td>
+          <td><code>server_vad</code>, threshold 0.5, silence 200 ms</td>
+          <td>로컬 sweep과 LiveKit/OpenAI Realtime reference 모두 200 ms를 방어 가능한 기준으로 만든다.</td>
+        </tr>
+        <tr>
+          <td>Outlier policy</td>
+          <td>p50 + representative max + raw max + outlier count</td>
+          <td>FD-Bench식 end-of-speech to response-start 관점과 severe stall 분리 요구에 맞춘다.</td>
+        </tr>
+        <tr>
+          <td>Playback</td>
+          <td>10 ms output callback, first playback callback timestamp</td>
+          <td>buffer write가 아니라 실제 callback 소비 시각을 측정해 로컬 playback 대기를 드러낸다.</td>
+        </tr>
+        <tr>
+          <td>Device I/O</td>
+          <td><code>latency="low"</code> for input and output streams</td>
+          <td>sounddevice 문서는 interactive application에서 low latency 선택을 지원한다.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. 남은 병목과 다음 실험</h2>
+    <div class="warning">
+      <p><strong>아직 “더 이상 최적화 불가”는 증명되지 않았다.</strong> 현재 결과는 fast path의 중요한 병목을 제거했음을 보여주지만, endpoint anticipation과 input chunk granularity는 아직 실험 후보로 남아 있다.</p>
+    </div>
+    <ol>
+      <li><strong>실제 live rerun:</strong> 10 ms playback callback과 sounddevice low-latency I/O는 API first-audio fixture에 반영되지 않는다. 실제 device callback 기준 로그로 수동 세션을 다시 측정해야 한다.</li>
+      <li><strong>Input chunk sweep:</strong> 현재 microphone chunk는 20 ms다. 10 ms input chunk가 VAD responsiveness를 개선하는지, API append overhead만 늘리는지 별도 sweep이 필요하다.</li>
+      <li><strong>Speculative endpoint anticipation:</strong> 최신 turn-taking 연구는 endpoint anticipation과 speculative response가 평균 latency를 줄일 수 있음을 시사한다. 다만 correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
+      <li><strong>WebRTC/AEC path:</strong> barge-in을 기본값으로 켜려면 laptop speaker echo 문제를 해결해야 한다. browser/WebRTC 또는 hardware AEC 경로가 필요하다.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>7. 출처</h2>
+    <ul>
+      <li><a href="https://developers.openai.com/api/docs/guides/realtime">OpenAI Realtime documentation</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/realtime-vad">OpenAI Realtime VAD documentation</a></li>
+      <li><a href="https://developers.openai.com/api/docs/guides/latency-optimization">OpenAI latency optimization guidance</a></li>
+      <li><a href="https://github.com/livekit/agents/blob/main/livekit-plugins/livekit-plugins-openai/livekit/plugins/openai/realtime/utils.py">LiveKit OpenAI Realtime plugin source</a></li>
+      <li><a href="https://github.com/livekit/agents/blob/main/livekit-agents/livekit/agents/inference/eot/base.py">LiveKit EOT detector source</a></li>
+      <li><a href="https://python-sounddevice.readthedocs.io/en/latest/api/streams.html">python-sounddevice stream API documentation</a></li>
+      <li><a href="https://arxiv.org/html/2604.01897v1">FastTurn</a></li>
+      <li><a href="https://arxiv.org/html/2503.04721v3">FD-Bench</a></li>
+      <li><a href="../../ref/current-state-2026-06-27.md">Local research snapshot</a></li>
+      <li><a href="../../benchmarks/2026-06-27-turn-detection-optimization/">Turn detection optimization notes</a></li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

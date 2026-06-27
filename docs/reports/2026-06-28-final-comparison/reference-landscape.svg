@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="460" role="img" aria-labelledby="title desc">
+  <title id="title">Reference repository landscape</title>
+  <desc id="desc">Reference repositories compared by GitHub popularity context and whether a numeric latency harness was available in this run.</desc>
+  <rect width="980" height="460" fill="#f8fafc"/>
+  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Reference landscape - context, not a speed ranking</text>
+  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">Stars show adoption context. The latency-evidence column separates measured artifacts from architectural review.</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12">
+    <text x="28" y="100" fill="#64748b">Project</text>
+    <text x="310" y="100" fill="#64748b">Stars</text>
+    <text x="650" y="100" fill="#64748b">Numeric latency evidence in this run</text>
+    <text x="28" y="126" fill="#111827">AIRI</text>
+    <rect x="310" y="112" width="420" height="18" rx="3" fill="#60a5fa"/>
+    <text x="742" y="126" fill="#1e3a8a">41,279</text>
+    <circle cx="700" cy="121" r="8" fill="#cbd5e1"/>
+    <text x="718" y="126" fill="#475569">setup/architecture only</text>
+
+    <text x="28" y="166" fill="#111827">Open-LLM-VTuber</text>
+    <rect x="310" y="152" width="122" height="18" rx="3" fill="#93c5fd"/>
+    <text x="444" y="166" fill="#1e3a8a">11,943</text>
+    <circle cx="700" cy="161" r="8" fill="#cbd5e1"/>
+    <text x="718" y="166" fill="#475569">setup/architecture only</text>
+
+    <text x="28" y="206" fill="#111827">LiveKit Agents</text>
+    <rect x="310" y="192" width="114" height="18" rx="3" fill="#93c5fd"/>
+    <text x="436" y="206" fill="#1e3a8a">11,153</text>
+    <circle cx="700" cy="201" r="8" fill="#cbd5e1"/>
+    <text x="718" y="206" fill="#475569">source-code reference</text>
+
+    <text x="28" y="246" fill="#111827">RealtimeVoiceChat</text>
+    <rect x="310" y="232" width="39" height="18" rx="3" fill="#bfdbfe"/>
+    <text x="361" y="246" fill="#1e3a8a">3,776</text>
+    <circle cx="700" cy="241" r="8" fill="#cbd5e1"/>
+    <text x="718" y="246" fill="#475569">setup/architecture only</text>
+
+    <text x="28" y="286" fill="#111827">Neuro</text>
+    <rect x="310" y="272" width="20" height="18" rx="3" fill="#bfdbfe"/>
+    <text x="342" y="286" fill="#1e3a8a">1,993</text>
+    <circle cx="700" cy="281" r="8" fill="#cbd5e1"/>
+    <text x="718" y="286" fill="#475569">memory/prompt pattern only</text>
+
+    <text x="28" y="326" fill="#111827">AI-Waifu-Vtuber</text>
+    <rect x="310" y="312" width="12" height="18" rx="3" fill="#bfdbfe"/>
+    <text x="334" y="326" fill="#1e3a8a">1,089</text>
+    <circle cx="700" cy="321" r="8" fill="#cbd5e1"/>
+    <text x="718" y="326" fill="#475569">legacy streaming reference</text>
+
+    <text x="28" y="366" fill="#111827">zemory-sama</text>
+    <rect x="310" y="352" width="4" height="18" rx="2" fill="#22c55e"/>
+    <text x="326" y="366" fill="#166534">new repo</text>
+    <circle cx="700" cy="361" r="8" fill="#22c55e"/>
+    <text x="718" y="366" fill="#14532d">numeric latency artifacts</text>
+  </g>
+  <text x="28" y="426" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Conclusion: external repos inform architecture. zemory-sama is the only candidate assigned measured latency numbers in this local run.</text>
+</svg>
