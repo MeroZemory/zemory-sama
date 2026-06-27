@@ -58,6 +58,7 @@ def _event_from_timings(
     voice: str,
     eagerness: Eagerness,
     turn_detection: TurnDetection,
+    server_vad_threshold: float,
     mode: Mode,
     audio_end_at: float,
     speech_stopped_at: float | None,
@@ -74,6 +75,7 @@ def _event_from_timings(
         "profile": "realtime_audio",
         "eagerness": eagerness,
         "turn_detection": turn_detection,
+        "server_vad_threshold": server_vad_threshold,
         "interrupted": False,
         "early_cutoff": early_cutoff,
         "sample_source": f"macos_say_{mode}",
@@ -169,6 +171,7 @@ async def _measure_sample(
     *,
     eagerness: Eagerness,
     turn_detection: TurnDetection,
+    server_vad_threshold: float,
     server_vad_silence_ms: int,
     mode: Mode,
     timeout_s: float,
@@ -179,6 +182,7 @@ async def _measure_sample(
     cfg.settings.profile = "realtime_audio"
     cfg.settings.realtime.semantic_vad_eagerness = eagerness
     cfg.settings.realtime.turn_detection = turn_detection
+    cfg.settings.realtime.server_vad_threshold = server_vad_threshold
     cfg.settings.realtime.server_vad_silence_duration_ms = server_vad_silence_ms
 
     llm = OpenAIRealtimeLLM(cfg.OPENAI_API_KEY)
@@ -203,6 +207,7 @@ async def _measure_sample(
         voice=sample.voice,
         eagerness=eagerness,
         turn_detection=turn_detection,
+        server_vad_threshold=server_vad_threshold,
         mode=mode,
         audio_end_at=audio_end_at,
         speech_stopped_at=speech_stopped_at,
@@ -231,6 +236,7 @@ async def _run(args: argparse.Namespace) -> None:
                     rendered[sample.name],
                     eagerness=args.eagerness,
                     turn_detection=args.turn_detection,
+                    server_vad_threshold=args.server_vad_threshold,
                     server_vad_silence_ms=args.server_vad_silence_ms,
                     mode=args.mode,
                     timeout_s=args.timeout_s,
@@ -243,6 +249,7 @@ async def _run(args: argparse.Namespace) -> None:
         f"{len(events)} macOS say fixtures streamed as realtime 24 kHz PCM. "
         f"Mode={args.mode}; turn_detection={args.turn_detection}; "
         f"semantic_vad eagerness={args.eagerness}; "
+        f"server_vad threshold={args.server_vad_threshold}; "
         f"server_vad silence={args.server_vad_silence_ms} ms. "
         "Metric is final source-audio chunk sent to first response audio delta; "
         "raw transcripts are not recorded."
@@ -275,6 +282,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="semantic_vad",
     )
     parser.add_argument("--server-vad-silence-ms", type=int, default=300)
+    parser.add_argument("--server-vad-threshold", type=float, default=0.5)
     parser.add_argument("--trials", type=int, default=1)
     parser.add_argument("--timeout-s", type=float, default=15.0)
     parser.add_argument(
