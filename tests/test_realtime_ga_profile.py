@@ -31,8 +31,10 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
         "rate": 24_000,
     }
     assert session["audio"]["input"]["turn_detection"] == {
-        "type": "semantic_vad",
-        "eagerness": "high",
+        "type": "server_vad",
+        "threshold": 0.5,
+        "prefix_padding_ms": 300,
+        "silence_duration_ms": 200,
         "create_response": True,
         "interrupt_response": False,
     }
@@ -54,7 +56,7 @@ def test_external_tts_profile_requests_text_output(monkeypatch) -> None:
     assert session["type"] == "realtime"
     assert session["model"] == "gpt-realtime-2"
     assert session["output_modalities"] == ["text"]
-    assert session["audio"]["input"]["turn_detection"]["type"] == "semantic_vad"
+    assert session["audio"]["input"]["turn_detection"]["type"] == "server_vad"
     assert "output" not in session["audio"]
 
 
