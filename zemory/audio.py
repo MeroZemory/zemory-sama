@@ -36,6 +36,11 @@ def generate_beep_pcm(
     return pcm16.tobytes()
 
 
+def output_block_size(sample_rate: int = SAMPLE_RATE, block_ms: int = 20) -> int:
+    """Return output callback frames for a low-latency PCM block."""
+    return int(sample_rate * block_ms / 1000)
+
+
 class MicrophoneStream:
     """Captures PCM16 audio from the default microphone."""
 
@@ -140,7 +145,7 @@ class SpeakerStream:
             samplerate=SAMPLE_RATE,
             channels=1,
             dtype="int16",
-            blocksize=960,  # 40ms at 24kHz
+            blocksize=output_block_size(),
             callback=self._callback,
         )
         self._stream.start()
