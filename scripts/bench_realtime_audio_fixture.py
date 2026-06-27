@@ -65,7 +65,9 @@ def _event_from_timings(
     speech_stopped_at: float | None,
     first_audio_at: float,
 ) -> dict[str, float | str | bool | None]:
-    early_cutoff = first_audio_at < audio_end_at
+    early_cutoff = first_audio_at < audio_end_at or (
+        speech_stopped_at is not None and speech_stopped_at < audio_end_at
+    )
     total_ms = None if early_cutoff else round((first_audio_at - audio_end_at) * 1000, 1)
     event = {
         "event": "turn.complete",
