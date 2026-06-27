@@ -63,6 +63,7 @@ class MicrophoneStream:
             channels=1,
             dtype="int16",
             blocksize=self.chunk_size,
+            latency="low",
             callback=self._callback,
         )
         self._stream.start()
@@ -150,6 +151,7 @@ class SpeakerStream:
             channels=1,
             dtype="int16",
             blocksize=output_block_size(),
+            latency="low",
             callback=self._callback,
         )
         self._stream.start()
