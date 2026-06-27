@@ -7,6 +7,7 @@ import pytest
 from scripts.bench_realtime_audio_fixture import (
     _chunk_pcm,
     _event_from_timings,
+    _write_live_benchmark_artifacts,
 )
 
 
@@ -72,3 +73,30 @@ def test_event_from_timings_excludes_speech_stop_before_audio_end() -> None:
 
     assert event["early_cutoff"] is True
     assert event["total_ms"] is None
+
+
+def test_write_live_benchmark_artifacts_handles_invalid_only_probe(tmp_path) -> None:
+    event = _event_from_timings(
+        fixture="en_short",
+        voice="Samantha",
+        eagerness="high",
+        turn_detection="server_vad",
+        server_vad_threshold=0.6,
+        mode="semantic_vad",
+        audio_end_at=100.0,
+        speech_stopped_at=99.5,
+        first_audio_at=100.1,
+    )
+
+    _write_live_benchmark_artifacts(
+        [event],
+        out_dir=tmp_path,
+        title="invalid probe",
+        source_note="probe note",
+    )
+
+    summary = (tmp_path / "summary.json").read_text(encoding="utf-8")
+    readme = (tmp_path / "README.md").read_text(encoding="utf-8")
+    assert '"turn_count": 0' in summary
+    assert '"early_cutoff_count": 1' in summary
+    assert "No valid latency samples" in readme
