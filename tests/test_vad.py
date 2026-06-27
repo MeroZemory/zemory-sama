@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from zemory.providers.turn.silero import SileroTurnDetector
-from zemory.vad import VADStateMachine, calc_db, resample_24k_to_16k
+from zemory.vad import CHUNK_SAMPLES, SileroVAD, VADStateMachine, calc_db, resample_24k_to_16k
 
 
 class SequenceVAD:
@@ -77,3 +77,19 @@ def test_vad_helpers_compute_db_and_resample() -> None:
     assert calc_db(silence) == 0.0
     assert calc_db(loud) > 0
     assert len(resample_24k_to_16k(source)) == 160
+
+
+def test_silero_vad_onnx_wrapper_accepts_tensor_only_model() -> None:
+    from zemory import config as cfg
+
+    class TensorOnlyModel:
+        def __call__(self, audio, sample_rate: int):
+            assert sample_rate == cfg.settings.vad_sample_rate
+            assert audio.dim() == 1
+            return np.array(0.42, dtype=np.float32)
+
+    vad = SileroVAD.__new__(SileroVAD)
+    vad._model = TensorOnlyModel()
+    vad._onnx = True
+
+    assert vad(np.zeros(CHUNK_SAMPLES, dtype=np.int16)) == pytest.approx(0.42)
