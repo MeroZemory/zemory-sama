@@ -19,8 +19,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from zemory.observability.benchmark_artifacts import write_benchmark_artifacts
-
 Mode = Literal["semantic_vad", "forced_commit"]
 Eagerness = Literal["low", "medium", "high", "auto"]
 TurnDetection = Literal["semantic_vad", "server_vad"]
@@ -213,6 +211,8 @@ async def _measure_sample(
 
 
 async def _run(args: argparse.Namespace) -> None:
+    from zemory.observability.benchmark_artifacts import write_benchmark_artifacts
+
     _require_binary("say")
     _require_binary("ffmpeg")
 
