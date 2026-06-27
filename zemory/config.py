@@ -91,12 +91,13 @@ class RealtimeSession(BaseSettings):
     voice: str = "marin"
     reasoning_effort: Literal["low", "medium", "high"] = "low"
 
-    # Realtime GA profile: semantic_vad is the default, server_vad is fallback.
-    turn_detection: Literal["semantic_vad", "server_vad"] = "semantic_vad"
+    # Fast path: server_vad with a short silence window wins local live fixtures.
+    # semantic_vad remains available when more conservative turn-taking is desired.
+    turn_detection: Literal["semantic_vad", "server_vad"] = "server_vad"
     semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "high"
     server_vad_threshold: float = 0.5
     server_vad_prefix_padding_ms: int = 300
-    server_vad_silence_duration_ms: int = 700
+    server_vad_silence_duration_ms: int = 200
     server_vad_idle_timeout_ms: int | None = None
 
     # Local profile: Realtime STT disabled (we inject text)
