@@ -178,16 +178,16 @@
     <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
-      <span class="pill">벤치 구현 기준 commit: <code>8ae6045</code></span>
-      <span class="pill">검증: 90 tests, coverage 87.42%</span>
+      <span class="pill">벤치 구현 기준 commit: <code>a12424f</code></span>
+      <span class="pill">검증: 92 tests, coverage 87.42%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
 
   <section class="summary" aria-label="headline metrics">
     <div class="metric">
-      <strong>1275 ms</strong>
-      <span>기본 server_vad n8 full API-to-device p50. 첫 로컬 speaker playback callback 기준.</span>
+      <strong>1261 ms</strong>
+      <span>현재 short-response 기본값 n8 full API-to-device p50. 첫 로컬 speaker playback callback 기준.</span>
     </div>
     <div class="metric">
       <strong>957 ms</strong>
@@ -206,10 +206,11 @@
   <section>
     <h2>1. 결론</h2>
     <div class="callout">
-      <p><strong>현재 기본값은 유지한다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 20 ms input chunk, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
+      <p><strong>현재 기본 경로는 Realtime audio-native + short response다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 20 ms input chunk, <code>one short sentence</code> response cap, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
     </div>
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
-    <p>full API-to-device rerun도 완료됐다. 8회 live fixture에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1275.0 ms, representative max 1403.3 ms, outlier 0이었다. API first audio delta에서 speaker callback까지의 추가 비용은 p50 6.5 ms, representative max 9.8 ms라 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
+    <p>full API-to-device rerun도 완료됐다. 현재 short-response 기본값은 n8에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1261.3 ms, representative max 1498.7 ms, outlier 0이었다. 같은 코드/시간대 old response length는 p50 1211.8 ms로 더 낮았지만 representative max가 1612.7 ms로 더 높았다. 따라서 short response는 p50 단독 승리가 아니라 tail과 실제 발화 길이를 줄이는 기본값으로 채택한다.</p>
+    <p>API first audio delta에서 speaker callback까지의 추가 비용은 현재 short default n8 기준 p50 5.3 ms, representative max 9.4 ms다. 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
     <p><code>turn_detection=none</code>과 exact endpoint forced commit으로 상한선을 재면 p50 957.0 ms, representative max 1354.2 ms였다. 이는 server_vad full-device p50보다 318.0 ms 빠르지만 실제 앱이 사용자 발화 종료를 정확히 알아야 하므로 기본값이 아니라 endpoint anticipation/local endpoint research 후보로 둔다.</p>
     <p>로컬 Silero endpoint로 Realtime buffer를 수동 commit하는 실제 경로도 구현하고 튜닝했다. 기존 two-stage local VAD는 n4 p50 2940.3 ms였고, endpoint 전용 miss window를 줄인 뒤 miss14 안정 후보는 n8 p50 1654.2 ms였다. 하지만 기본 server_vad full-device n8 p50 1275.0 ms보다 느리고, miss10은 2/4 early cutoff가 발생해 기본값으로 채택하지 않았다.</p>
     <p>무작위 severe delay는 raw max로 보존하되 headline max로 쓰지 않는다. 보고서는 p50, representative max, raw max, outlier count를 함께 보여준다. 이 정책은 “나쁜 지표를 숨기는 것”이 아니라 네트워크/API stall과 일반 latency envelope을 분리하는 것이다.</p>
@@ -289,6 +290,15 @@
           <td class="num">1403.3 ms</td>
           <td class="num">0</td>
           <td class="status-good">API-to-device callback 기준 full rerun.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-short-default-device-playback-n8/">Short-response default device n8</a></td>
+          <td class="num">8</td>
+          <td class="num">1261.3 ms</td>
+          <td class="num">1498.7 ms</td>
+          <td class="num">1498.7 ms</td>
+          <td class="num">0</td>
+          <td class="status-good">Current default. Shorter speech output; p50 mixed, tail improved vs same-time old-length probe.</td>
         </tr>
         <tr>
           <td><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device n8</a></td>
@@ -453,6 +463,46 @@
     <figure>
       <img src="live-device-playback.svg" alt="Live API to device playback benchmark SVG">
       <figcaption>full rerun은 API/network/model/VAD와 local speaker callback을 같은 측정선에 둔다.</figcaption>
+    </figure>
+
+    <h3>Response length cap</h3>
+    <p>OpenAI latency guidance의 “더 적게 생성하기” 원칙을 실제 Realtime voice path에 적용했다. <code>one short sentence</code> 기본값은 같은 시간대 old length 대비 p50은 조금 느렸지만 representative max를 낮췄고, 첫 오디오 이후 실제 발화 길이를 줄인다. 따라서 voice UX 기본값으로 채택했다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Run</th>
+          <th class="num">Samples</th>
+          <th>Response length</th>
+          <th class="num">Device p50</th>
+          <th class="num">Representative max</th>
+          <th class="num">Early cutoffs</th>
+          <th>Decision</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-response-length-old-device-playback-n8/">Old response length n8</a></td>
+          <td class="num">8</td>
+          <td><code>1-2 sentences</code></td>
+          <td class="num">1211.8 ms</td>
+          <td class="num">1612.7 ms</td>
+          <td class="num">0</td>
+          <td class="status-warn">Lower p50 in this run, higher tail and longer speech.</td>
+        </tr>
+        <tr>
+          <td><a href="../../benchmarks/2026-06-28-short-default-device-playback-n8/">Short default n8</a></td>
+          <td class="num">8</td>
+          <td><code>one short sentence</code></td>
+          <td class="num">1261.3 ms</td>
+          <td class="num">1498.7 ms</td>
+          <td class="num">0</td>
+          <td class="status-good">Kept for lower representative tail and shorter spoken output.</td>
+        </tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="response-length-sweep.svg" alt="Response length benchmark SVG">
+      <figcaption>짧은 응답 길이는 first-audio p50만으로는 혼합 결과지만, representative tail과 실제 spoken duration을 줄인다.</figcaption>
     </figure>
 
     <h3>Forced commit upper bound</h3>
@@ -660,13 +710,13 @@
         </tr>
         <tr>
           <td>Response cap probe</td>
-          <td>No session-level <code>max_response_output_tokens</code></td>
-          <td>Live GA session update rejected <code>session.max_response_output_tokens</code>; keep automatic server VAD response path unchanged.</td>
+          <td><code>one short sentence</code> instruction cap; no session-level <code>max_response_output_tokens</code></td>
+          <td>Live GA session update rejected <code>session.max_response_output_tokens</code>; instruction-level cap lowers representative tail and spoken output duration.</td>
         </tr>
         <tr>
           <td>Playback</td>
           <td>10 ms output callback, API-to-device added p50 6.5 ms</td>
-          <td>full live n8에서 API first-audio delta부터 speaker callback까지 representative max 9.8 ms, outlier 0.</td>
+          <td>current short default n8에서 API first-audio delta부터 speaker callback까지 representative max 9.4 ms, outlier 0.</td>
         </tr>
         <tr>
           <td>Device I/O</td>
@@ -686,6 +736,7 @@
       <li><strong>Full live API-to-device rerun:</strong> 완료. n8 p50 1275.0 ms, representative max 1403.3 ms, API-to-playback p50 6.5 ms.</li>
       <li><strong>Input chunk sweep:</strong> 완료. 10 ms input chunk는 n8에서 p50과 representative max가 모두 나빠져 기본값으로 채택하지 않았다.</li>
       <li><strong>Session token cap:</strong> 완료. 현재 Realtime GA session update가 <code>session.max_response_output_tokens</code>를 거부하므로 자동 server VAD 응답 경로에서는 적용하지 않는다.</li>
+      <li><strong>Response length cap:</strong> 완료. <code>one short sentence</code> 기본값은 old length 대비 p50은 혼합 결과지만 representative max를 1612.7 ms에서 1498.7 ms로 낮추고 실제 음성 출력 길이를 줄인다.</li>
       <li><strong>Forced commit upper bound:</strong> 완료. <code>turn_detection=none</code> exact endpoint n8은 p50 957.0 ms로 server_vad full-device n8보다 318.0 ms 빠르다.</li>
       <li><strong>Local endpoint commit:</strong> 완료 후 기각. endpoint 전용 one-stage state machine으로 miss14 n8 p50 1654.2 ms, representative max 2043.5 ms, early cutoff 0을 만들었지만 server_vad p50 1275.0 ms보다 느리고, miss10은 2/4 early cutoff였다.</li>
       <li><strong>Speculative endpoint anticipation:</strong> 2026-06-11 Endpoint Anticipation 연구는 평균 505 ms latency 감소와 28.4% speculative computation 증가를 보고한다. forced commit 결과와 방향이 맞지만, correctness와 interruption UX tradeoff가 커서 research profile로 분리해야 한다.</li>
@@ -712,6 +763,8 @@
       <li><a href="../../benchmarks/2026-06-28-speaker-output-callback/">Speaker output callback benchmark</a></li>
       <li><a href="../../benchmarks/2026-06-28-live-device-playback-n8/">Live API-to-device playback benchmark n8</a></li>
       <li><a href="../../benchmarks/2026-06-28-forced-commit-device-playback-n8/">Forced commit device playback benchmark n8</a></li>
+      <li><a href="../../benchmarks/2026-06-28-short-default-device-playback-n8/">Short default device playback benchmark n8</a></li>
+      <li><a href="../../benchmarks/2026-06-28-response-length-old-device-playback-n8/">Old response length device playback benchmark n8</a></li>
       <li><a href="../../benchmarks/2026-06-28-local-endpoint-device-playback-n4/">Local endpoint device playback benchmark n4</a></li>
       <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss10-device-playback-n4/">Local endpoint miss10 benchmark n4</a></li>
       <li><a href="../../benchmarks/2026-06-28-local-endpoint-miss12-device-playback-n4/">Local endpoint miss12 benchmark n4</a></li>

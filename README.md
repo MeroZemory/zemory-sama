@@ -9,9 +9,10 @@ response quickly, handling interruptions, and keeping the conversation state
 coherent over long sessions.
 
 The default runtime uses OpenAI Realtime GA audio-in/audio-out with
-`gpt-realtime-2`, low-latency `server_vad` at a 200 ms silence window, and
-direct PCM playback. `semantic_vad`, external TTS, and local VAD/STT remain
-available as explicit choices rather than the default fast path.
+`gpt-realtime-2`, low-latency `server_vad` at a 200 ms silence window,
+one-short-sentence responses, and direct PCM playback. `semantic_vad`,
+external TTS, and local VAD/STT remain available as explicit choices rather
+than the default fast path.
 
 ## One-Prompt Setup For Coding Agents
 
@@ -62,7 +63,8 @@ Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/re
 | Run | Fixture | Key result | Artifact |
 | --- | --- | --- | --- |
 | Optimized live fixture | 4 Korean/English macOS `say` clips, server VAD 200 ms | source-audio end to first response audio p50 1051.5 ms, representative max 1350.5 ms, no outliers | [docs/benchmarks/2026-06-27-optimized-server-vad-200](docs/benchmarks/2026-06-27-optimized-server-vad-200) |
-| Live device playback | 8 Korean/English macOS `say` clips, server VAD 200 ms, speaker callback enabled | source-audio end to first local speaker playback p50 1275.0 ms, representative max 1403.3 ms; API to playback p50 6.5 ms | [docs/benchmarks/2026-06-28-live-device-playback-n8](docs/benchmarks/2026-06-28-live-device-playback-n8) |
+| Current short default playback | 8 Korean/English macOS `say` clips, server VAD 200 ms, one-short-sentence default, speaker callback enabled | source-audio end to first local speaker playback p50 1261.3 ms, representative max 1498.7 ms; API to playback p50 5.3 ms | [docs/benchmarks/2026-06-28-short-default-device-playback-n8](docs/benchmarks/2026-06-28-short-default-device-playback-n8) |
+| Previous live device playback | 8 Korean/English macOS `say` clips, server VAD 200 ms, speaker callback enabled | source-audio end to first local speaker playback p50 1275.0 ms, representative max 1403.3 ms; API to playback p50 6.5 ms | [docs/benchmarks/2026-06-28-live-device-playback-n8](docs/benchmarks/2026-06-28-live-device-playback-n8) |
 | Forced commit upper bound | 8 Korean/English macOS `say` clips, `turn_detection=none`, exact endpoint commit | source-audio end to first local speaker playback p50 957.0 ms, representative max 1354.2 ms; experimental upper bound only | [docs/benchmarks/2026-06-28-forced-commit-device-playback-n8](docs/benchmarks/2026-06-28-forced-commit-device-playback-n8) |
 | Local endpoint commit | 8 Korean/English macOS `say` clips, tuned local Silero endpoint miss14, manual Realtime commit | source-audio end to first local speaker playback p50 1654.2 ms; no early cutoffs; stable but slower than default and rejected | [docs/benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8](docs/benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8) |
 | VAD stability sweep | 8 Korean/English macOS `say` clips, server VAD 200 ms | p50 1240.0 ms, representative max 1509.0 ms, 1 extreme outlier retained as diagnostic | [docs/benchmarks/2026-06-27-server-vad-200-n8](docs/benchmarks/2026-06-27-server-vad-200-n8) |
@@ -73,7 +75,9 @@ Final HTML comparison report: [docs/reports/2026-06-28-final-comparison](docs/re
 
 ![Optimized live latency](docs/benchmarks/2026-06-27-optimized-server-vad-200/latency.svg)
 
-![Live device playback latency](docs/benchmarks/2026-06-28-live-device-playback-n8/latency.svg)
+![Current short default playback latency](docs/benchmarks/2026-06-28-short-default-device-playback-n8/latency.svg)
+
+![Previous live device playback latency](docs/benchmarks/2026-06-28-live-device-playback-n8/latency.svg)
 
 ![Forced commit device playback latency](docs/benchmarks/2026-06-28-forced-commit-device-playback-n8/latency.svg)
 
@@ -206,7 +210,7 @@ Common values:
 ```bash
 ZEMORY_PROFILE=realtime_audio
 ZEMORY_ENABLE_BARGE_IN=0
-ZEMORY_RESPONSE_LENGTH="1-2 sentences"
+ZEMORY_RESPONSE_LENGTH="one short sentence"
 ZEMORY_MEMORY_ENABLED=1
 ZEMORY_MEMORY_PATH=.zemory/memory.sqlite3
 ZEMORY_MEMORY_RECALL_DEADLINE_MS=80
@@ -239,7 +243,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 90 tests passing.
+- 92 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 87%.
 

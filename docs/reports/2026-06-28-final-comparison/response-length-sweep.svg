@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="320" role="img" aria-labelledby="title desc">
+  <title id="title">Response length benchmark</title>
+  <desc id="desc">Comparison between old 1-2 sentence response length and one short sentence default.</desc>
+  <rect width="980" height="320" fill="#ffffff"/>
+  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Response length cap: p50 mixed, tail better</text>
+  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">8 live macOS say fixtures each, server_vad 200 ms, 20 ms chunks, first local speaker playback callback.</text>
+
+  <line x1="300" y1="246" x2="900" y2="246" stroke="#cbd5e1"/>
+  <text x="300" y="268" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0</text>
+  <text x="438" y="268" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">500</text>
+  <text x="582" y="268" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
+  <text x="726" y="268" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1500</text>
+  <text x="864" y="268" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000 ms</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12">
+    <text x="28" y="124" fill="#111827">old default: 1-2 sentences</text>
+    <rect x="300" y="108" width="363.5" height="22" rx="3" fill="#94a3b8"/>
+    <line x1="783.8" y1="102" x2="783.8" y2="138" stroke="#475569" stroke-width="3"/>
+    <text x="678" y="124" fill="#334155">p50 1211.8</text>
+    <text x="798" y="124" fill="#334155">rep max 1612.7</text>
+
+    <text x="28" y="184" fill="#111827">current default: one short sentence</text>
+    <rect x="300" y="168" width="378.4" height="22" rx="3" fill="#22c55e"/>
+    <line x1="749.6" y1="162" x2="749.6" y2="198" stroke="#15803d" stroke-width="3"/>
+    <text x="692" y="184" fill="#14532d">p50 1261.3</text>
+    <text x="764" y="184" fill="#14532d">rep max 1498.7</text>
+  </g>
+
+  <rect x="28" y="294" width="14" height="10" fill="#22c55e"/>
+  <text x="50" y="303" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">kept for lower representative max and shorter spoken output</text>
+</svg>
