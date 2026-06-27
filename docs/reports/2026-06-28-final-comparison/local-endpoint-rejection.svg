@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="390" role="img" aria-labelledby="title desc">
+  <title id="title">Local endpoint commit rejection</title>
+  <desc id="desc">Comparison of default server VAD, exact forced commit, and local endpoint commit latency.</desc>
+  <rect width="980" height="390" fill="#ffffff"/>
+  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Local endpoint commit is technically valid, but too slow</text>
+  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">Local endpoint n4 waits about 2 seconds before committing the Realtime input buffer.</text>
+
+  <line x1="300" y1="302" x2="895" y2="302" stroke="#cbd5e1"/>
+  <text x="300" y="324" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0</text>
+  <text x="470" y="324" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
+  <text x="650" y="324" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000</text>
+  <text x="830" y="324" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">3000 ms</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="12">
+    <text x="28" y="118" fill="#111827">server_vad default, device p50</text>
+    <rect x="300" y="102" width="229.5" height="22" rx="3" fill="#22c55e"/>
+    <line x1="553" y1="96" x2="553" y2="132" stroke="#15803d" stroke-width="3"/>
+    <text x="542" y="118" fill="#14532d">1275.0 ms</text>
+    <text x="566" y="118" fill="#14532d">rep max 1403.3 ms</text>
+
+    <text x="28" y="168" fill="#111827">forced commit exact endpoint p50</text>
+    <rect x="300" y="152" width="172.3" height="22" rx="3" fill="#f59e0b"/>
+    <line x1="544" y1="146" x2="544" y2="182" stroke="#b45309" stroke-width="3"/>
+    <text x="485" y="168" fill="#78350f">957.0 ms</text>
+    <text x="557" y="168" fill="#78350f">rep max 1354.2 ms</text>
+
+    <text x="28" y="232" fill="#111827">local endpoint commit p50</text>
+    <rect x="300" y="216" width="366.2" height="22" rx="3" fill="#60a5fa"/>
+    <rect x="666.2" y="216" width="160.1" height="22" fill="#fb923c"/>
+    <rect x="826.3" y="216" width="1.3" height="22" fill="#0f766e"/>
+    <line x1="886" y1="210" x2="886" y2="246" stroke="#b91c1c" stroke-width="3"/>
+    <text x="680" y="232" fill="#1e3a8a">local VAD wait 2034.6 ms</text>
+    <text x="840" y="232" fill="#7c2d12">p50 2940.3 ms</text>
+    <text x="756" y="254" fill="#7c2d12">model after endpoint 889.5 ms</text>
+
+    <rect x="28" y="344" width="14" height="10" fill="#60a5fa"/>
+    <text x="50" y="353" fill="#334155">local VAD wait</text>
+    <rect x="164" y="344" width="14" height="10" fill="#fb923c"/>
+    <text x="186" y="353" fill="#334155">API first audio after endpoint</text>
+    <rect x="390" y="344" width="14" height="10" fill="#0f766e"/>
+    <text x="412" y="353" fill="#334155">API to playback</text>
+  </g>
+  <text x="28" y="374" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Decision: keep server_vad as default; use forced commit only as a target envelope for future endpoint anticipation.</text>
+</svg>
