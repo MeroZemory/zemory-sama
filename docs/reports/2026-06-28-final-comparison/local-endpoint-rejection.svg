@@ -1,55 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="450" role="img" aria-labelledby="title desc">
-  <title id="title">Local endpoint tuning rejection</title>
-  <desc id="desc">Local endpoint commit tuning compared with server VAD and exact forced commit.</desc>
-  <rect width="980" height="450" fill="#ffffff"/>
-  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Local endpoint tuning: faster, but still not the default</text>
-  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">Bars show p50 device playback latency. Markers show representative max. Red rows have invalid early-cutoff samples.</text>
-
-  <line x1="310" y1="366" x2="902" y2="366" stroke="#cbd5e1"/>
-  <text x="310" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0</text>
-  <text x="424" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">500</text>
-  <text x="532" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
-  <text x="640" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1500</text>
-  <text x="748" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000</text>
-  <text x="856" y="388" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2500 ms</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+  <title id="title">Local endpoint tuning decision</title>
+  <desc id="desc">Local endpoint commit tuning compared with server VAD and exact forced commit. Aggressive local endpoint candidates with early cutoffs are rejected.</desc>
+  <rect width="1200" height="500" fill="#ffffff"/>
+  <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Local endpoint tuning: implemented, tested, rejected for default</text>
+  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Bars show p50 device playback. The right column carries cutoff and decision notes so labels do not collide with markers.</text>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <text x="28" y="116" fill="#111827">server_vad default n8</text>
-    <rect x="310" y="100" width="275.4" height="22" rx="3" fill="#22c55e"/>
-    <line x1="613.1" y1="94" x2="613.1" y2="130" stroke="#15803d" stroke-width="3"/>
-    <text x="598" y="116" fill="#14532d">p50 1275.0</text>
-    <text x="704" y="116" fill="#14532d">rep max 1403.3</text>
-
-    <text x="28" y="166" fill="#111827">forced commit exact endpoint n8</text>
-    <rect x="310" y="150" width="206.7" height="22" rx="3" fill="#f59e0b"/>
-    <line x1="602.5" y1="144" x2="602.5" y2="180" stroke="#b45309" stroke-width="3"/>
-    <text x="530" y="166" fill="#78350f">p50 957.0</text>
-    <text x="626" y="166" fill="#78350f">rep max 1354.2</text>
-
-    <text x="28" y="216" fill="#111827">local endpoint miss10 n4</text>
-    <rect x="310" y="200" width="282.8" height="22" rx="3" fill="#ef4444"/>
-    <line x1="610.2" y1="194" x2="610.2" y2="230" stroke="#991b1b" stroke-width="3"/>
-    <text x="606" y="216" fill="#7f1d1d">p50 1309.2 valid only</text>
-    <text x="738" y="216" fill="#7f1d1d">2/4 early cutoff</text>
-
-    <text x="28" y="266" fill="#111827">local endpoint miss14 n8</text>
-    <rect x="310" y="250" width="357.3" height="22" rx="3" fill="#60a5fa"/>
-    <line x1="751.4" y1="244" x2="751.4" y2="280" stroke="#2563eb" stroke-width="3"/>
-    <text x="680" y="266" fill="#1e3a8a">p50 1654.2</text>
-    <text x="764" y="266" fill="#1e3a8a">rep max 2043.5</text>
-
-    <text x="28" y="316" fill="#111827">old two-stage local endpoint n4</text>
-    <rect x="310" y="300" width="540.0" height="22" rx="3" fill="#93c5fd"/>
-    <line x1="902" y1="294" x2="902" y2="330" stroke="#1d4ed8" stroke-width="3"/>
-    <text x="738" y="316" fill="#1e3a8a">p50 2940.3 clipped</text>
+    <text x="32" y="108" fill="#64748b">Run</text>
+    <text x="360" y="108" fill="#64748b">0</text>
+    <text x="476" y="108" fill="#64748b">500</text>
+    <text x="592" y="108" fill="#64748b">1000</text>
+    <text x="708" y="108" fill="#64748b">1500</text>
+    <text x="824" y="108" fill="#64748b">2000</text>
+    <text x="940" y="108" fill="#64748b">2500 ms</text>
+    <text x="1000" y="108" fill="#64748b">Decision</text>
+    <line x1="360" y1="118" x2="940" y2="118" stroke="#cbd5e1"/>
   </g>
 
-  <rect x="28" y="414" width="14" height="10" fill="#22c55e"/>
-  <text x="50" y="423" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">kept default</text>
-  <rect x="154" y="414" width="14" height="10" fill="#f59e0b"/>
-  <text x="176" y="423" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">upper bound only</text>
-  <rect x="302" y="414" width="14" height="10" fill="#60a5fa"/>
-  <text x="324" y="423" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">stable but rejected</text>
-  <rect x="478" y="414" width="14" height="10" fill="#ef4444"/>
-  <text x="500" y="423" font-family="Inter, Arial, sans-serif" font-size="12" fill="#334155">invalid early cutoff</text>
+  <g font-family="Inter, Arial, sans-serif" font-size="13">
+    <text x="32" y="152" fill="#111827">server_vad default n8</text>
+    <rect x="360" y="136" width="296" height="22" rx="3" fill="#22c55e"/>
+    <line x1="685" y1="132" x2="685" y2="162" stroke="#15803d" stroke-width="3"/>
+    <text x="1000" y="152" fill="#14532d">p50 1275, rep 1403, kept</text>
+
+    <text x="32" y="202" fill="#111827">forced commit exact endpoint n8</text>
+    <rect x="360" y="186" width="222" height="22" rx="3" fill="#f59e0b"/>
+    <line x1="674" y1="182" x2="674" y2="212" stroke="#b45309" stroke-width="3"/>
+    <text x="1000" y="202" fill="#78350f">p50 957, upper bound only</text>
+
+    <text x="32" y="252" fill="#111827">local endpoint miss10 n4</text>
+    <rect x="360" y="236" width="304" height="22" rx="3" fill="#ef4444"/>
+    <line x1="683" y1="232" x2="683" y2="262" stroke="#991b1b" stroke-width="3"/>
+    <text x="1000" y="252" fill="#7f1d1d">2/4 early cutoffs, reject</text>
+
+    <text x="32" y="302" fill="#111827">local endpoint miss12 n4</text>
+    <rect x="360" y="286" width="425" height="22" rx="3" fill="#93c5fd"/>
+    <line x1="802" y1="282" x2="802" y2="312" stroke="#2563eb" stroke-width="3"/>
+    <text x="1000" y="302" fill="#1e3a8a">p50 1832, stable but slower</text>
+
+    <text x="32" y="352" fill="#111827">local endpoint miss14 n8</text>
+    <rect x="360" y="336" width="384" height="22" rx="3" fill="#60a5fa"/>
+    <line x1="834" y1="332" x2="834" y2="362" stroke="#2563eb" stroke-width="3"/>
+    <text x="1000" y="352" fill="#1e3a8a">p50 1654, stable but slower</text>
+
+    <text x="32" y="402" fill="#111827">old two-stage local endpoint n4</text>
+    <rect x="360" y="386" width="580" height="22" rx="3" fill="#bfdbfe"/>
+    <line x1="940" y1="382" x2="940" y2="412" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="1000" y="402" fill="#1e3a8a">p50 2940 clipped, reject</text>
+  </g>
+
+  <text x="32" y="464" font-family="Inter, Arial, sans-serif" font-size="13" fill="#475569">Decision: exact endpoint proves an opportunity, but the tested local endpoint detector is not production-safe or faster than server_vad.</text>
 </svg>

@@ -1,38 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="350" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
   <title id="title">Live API-to-device playback benchmark</title>
   <desc id="desc">Realtime live fixture with first local speaker playback callback timing.</desc>
-  <rect width="980" height="350" fill="#ffffff"/>
-  <text x="28" y="42" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" fill="#111827">Full API-to-device rerun: playback is not the bottleneck</text>
-  <text x="28" y="66" font-family="Inter, Arial, sans-serif" font-size="13" fill="#4b5563">8 live macOS say fixtures, server_vad 200 ms, 20 ms input chunk, play_output=True.</text>
-  <line x1="290" y1="278" x2="895" y2="278" stroke="#cbd5e1"/>
-  <text x="290" y="300" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">0</text>
-  <text x="420" y="300" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">500</text>
-  <text x="558" y="300" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1000</text>
-  <text x="695" y="300" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">1500</text>
-  <text x="833" y="300" font-family="Inter, Arial, sans-serif" font-size="11" fill="#64748b">2000 ms</text>
+  <rect width="1200" height="390" fill="#ffffff"/>
+  <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Full API-to-device rerun: playback is not the bottleneck</text>
+  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">8 macOS say fixtures, server_vad 200 ms, 20 ms input chunk, play_output=True.</text>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <text x="28" y="118" fill="#111827">Device playback p50</text>
-    <rect x="290" y="102" width="350.6" height="22" rx="3" fill="#22c55e"/>
-    <line x1="676" y1="96" x2="676" y2="132" stroke="#15803d" stroke-width="3"/>
-    <text x="652" y="118" fill="#14532d">1275.0 ms</text>
-    <text x="688" y="118" fill="#14532d">rep max 1403.3 ms</text>
-
-    <text x="28" y="162" fill="#111827">API first-audio p50</text>
-    <rect x="290" y="146" width="348.7" height="22" rx="3" fill="#84cc16"/>
-    <line x1="673" y1="140" x2="673" y2="176" stroke="#3f6212" stroke-width="3"/>
-    <text x="650" y="162" fill="#365314">1267.9 ms</text>
-    <text x="685" y="162" fill="#365314">rep max 1393.5 ms</text>
-
-    <text x="28" y="206" fill="#111827">VAD wait p50</text>
-    <rect x="290" y="190" width="140.9" height="22" rx="3" fill="#93c5fd"/>
-    <line x1="441" y1="184" x2="441" y2="220" stroke="#2563eb" stroke-width="3"/>
-    <text x="443" y="206" fill="#1e3a8a">512.3 ms</text>
-
-    <text x="28" y="250" fill="#111827">API delta to playback p50</text>
-    <rect x="290" y="234" width="1.8" height="22" rx="2" fill="#0f766e"/>
-    <line x1="293" y1="228" x2="293" y2="264" stroke="#115e59" stroke-width="3"/>
-    <text x="304" y="250" fill="#134e4a">6.5 ms, rep max 9.8 ms</text>
+    <text x="32" y="108" fill="#64748b">Metric</text>
+    <text x="330" y="108" fill="#64748b">0</text>
+    <text x="468" y="108" fill="#64748b">500</text>
+    <text x="606" y="108" fill="#64748b">1000</text>
+    <text x="744" y="108" fill="#64748b">1500</text>
+    <text x="882" y="108" fill="#64748b">2000 ms</text>
+    <text x="980" y="108" fill="#64748b">Result</text>
+    <line x1="330" y1="118" x2="940" y2="118" stroke="#cbd5e1"/>
   </g>
-  <text x="28" y="328" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Conclusion: local playback adds less than one 10 ms callback block; remaining latency sits before the first API audio delta.</text>
+
+  <g font-family="Inter, Arial, sans-serif" font-size="13">
+    <text x="32" y="154" fill="#111827">Device playback p50</text>
+    <rect x="330" y="138" width="350" height="22" rx="3" fill="#22c55e"/>
+    <line x1="716" y1="134" x2="716" y2="164" stroke="#15803d" stroke-width="3"/>
+    <text x="980" y="154" fill="#14532d">1275.0 ms, rep 1403.3</text>
+
+    <text x="32" y="202" fill="#111827">API first-audio p50</text>
+    <rect x="330" y="186" width="348" height="22" rx="3" fill="#84cc16"/>
+    <line x1="714" y1="182" x2="714" y2="212" stroke="#3f6212" stroke-width="3"/>
+    <text x="980" y="202" fill="#365314">1267.9 ms, rep 1393.5</text>
+
+    <text x="32" y="250" fill="#111827">VAD wait p50</text>
+    <rect x="330" y="234" width="141" height="22" rx="3" fill="#93c5fd"/>
+    <line x1="482" y1="230" x2="482" y2="260" stroke="#2563eb" stroke-width="3"/>
+    <text x="980" y="250" fill="#1e3a8a">512.3 ms</text>
+
+    <text x="32" y="298" fill="#111827">API delta to playback p50</text>
+    <rect x="330" y="282" width="4" height="22" rx="2" fill="#0f766e"/>
+    <line x1="333" y1="278" x2="333" y2="308" stroke="#115e59" stroke-width="3"/>
+    <text x="980" y="298" fill="#134e4a">6.5 ms, rep 9.8</text>
+  </g>
+
+  <text x="32" y="358" font-family="Inter, Arial, sans-serif" font-size="13" fill="#475569">Conclusion: local playback adds less than one 10 ms callback block; remaining latency sits before first API audio.</text>
 </svg>

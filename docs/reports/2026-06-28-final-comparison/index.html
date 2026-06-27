@@ -108,6 +108,7 @@
     }
     table {
       width: 100%;
+      min-width: 760px;
       border-collapse: collapse;
       margin: 14px 0 20px;
       background: #fff;
@@ -138,11 +139,16 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       padding: 12px;
+      overflow-x: auto;
     }
     figure img {
       display: block;
       width: 100%;
+      min-width: 860px;
       height: auto;
+    }
+    section {
+      overflow-x: auto;
     }
     figcaption {
       color: var(--muted);
@@ -168,6 +174,11 @@
       .summary, .grid-two { grid-template-columns: 1fr; }
       table { font-size: 12px; }
       th, td { padding: 8px; }
+      figure { padding: 8px; }
+      figure img {
+        width: 860px;
+        max-width: none;
+      }
     }
   </style>
 </head>
@@ -175,11 +186,11 @@
 <main>
   <header>
     <h1>zemory-sama 최종 성능 비교 보고서</h1>
-    <p>실시간 음성 에이전트의 속도 최적화 결과를 로컬 벤치마크, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 외부 repo에 없는 지표는 만들지 않았고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
+    <p>실시간 음성 에이전트의 응답 최적화 결과를 로컬 ablation, 최신 연구, 공식 문서, 주요 레퍼런스 repo 소스 관점에서 비교했다. 이 문서는 외부 repo 속도 순위표가 아니다. 공통 fixture가 없는 외부 repo에는 latency 숫자를 만들지 않고, 측정 가능한 항목과 아키텍처 판단을 분리했다.</p>
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
-      <span class="pill">벤치 구현 기준 commit: <code>a12424f</code></span>
-      <span class="pill">검증: 92 tests, coverage 87.42%</span>
+      <span class="pill">벤치 기준: 2026-06-27 ~ 2026-06-28 local artifacts</span>
+      <span class="pill">검증: 95 tests, coverage 87.42%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -198,8 +209,8 @@
       <span>tuned local endpoint miss14 n8 p50. 안정적이지만 기본값보다 느려 기각.</span>
     </div>
     <div class="metric">
-      <strong>6.5 ms</strong>
-      <span>Realtime API first audio delta에서 로컬 playback callback까지의 p50.</span>
+      <strong>5.3 ms</strong>
+      <span>현재 short default에서 Realtime API first audio delta부터 로컬 playback callback까지의 p50.</span>
     </div>
   </section>
 
@@ -208,6 +219,8 @@
     <div class="callout">
       <p><strong>현재 기본 경로는 Realtime audio-native + short response다.</strong> zemory-sama의 fastest stable path는 <code>gpt-realtime-2</code> audio-in/audio-out, <code>reasoning.effort=low</code>, <code>server_vad</code> threshold 0.5, silence 200 ms, 20 ms input chunk, <code>one short sentence</code> response cap, 10 ms speaker callback, sounddevice low-latency I/O다.</p>
     </div>
+    <p><strong>외부 repo 대비 “우리가 더 빠르다”는 직접 결론은 내리지 않는다.</strong> 같은 모델을 쓰면 모델 내부 추론 속도는 거의 같은 하한을 갖고, 외부 repo마다 입력 fixture, endpoint 기준, TTS 경로, 출력 callback 기준이 다르다. 따라서 속도 비교의 의미는 cross-repo 순위가 아니라 zemory-sama 내부에서 모델 바깥 지연을 얼마나 줄였는지 검증하는 데 있다.</p>
+    <p>실제 최적화 대상은 모델 자체가 아니라 turn-end detection, audio-native streaming, 응답 길이, local playback buffering, barge-in/interrupt chain, async context deadline이다. 이 보고서는 그 후보들을 같은 harness로 채택/기각한 기록이다.</p>
     <p>200 ms보다 짧은 VAD silence window는 부분적으로 빠른 값이 나오지만 early cutoff가 발생했다. 193 ms와 195 ms는 n8 sweep에서 안정적이었으나 representative tail이 200 ms보다 나빠 기본값으로 채택하지 않았다.</p>
     <p>full API-to-device rerun도 완료됐다. 현재 short-response 기본값은 n8에서 source-audio end부터 첫 로컬 speaker playback callback까지 p50 1261.3 ms, representative max 1498.7 ms, outlier 0이었다. 같은 코드/시간대 old response length는 p50 1211.8 ms로 더 낮았지만 representative max가 1612.7 ms로 더 높았다. 따라서 short response는 p50 단독 승리가 아니라 tail과 실제 발화 길이를 줄이는 기본값으로 채택한다.</p>
     <p>API first audio delta에서 speaker callback까지의 추가 비용은 현재 short default n8 기준 p50 5.3 ms, representative max 9.4 ms다. 남은 큰 병목은 로컬 playback이 아니라 turn stop + model first-audio 구간이다.</p>
@@ -600,6 +613,7 @@
 
   <section>
     <h2>4. 레퍼런스 repo 비교</h2>
+    <p>외부 공개 repo 이름은 출처와 재현성 확보를 위해 표시한다. 다만 이 표는 latency 순위가 아니라 reference landscape다. 각 프로젝트는 목표가 다르고, 공통 fixture와 동일한 output boundary가 없어서 외부 repo에는 응답속도 숫자를 부여하지 않았다.</p>
     <table>
       <thead>
         <tr>
@@ -607,7 +621,7 @@
           <th class="num">Stars</th>
           <th>Freshness snapshot</th>
           <th>이번 분석에서의 역할</th>
-          <th>zemory-sama 반영 여부</th>
+          <th>Latency 비교 판정</th>
         </tr>
       </thead>
       <tbody>
@@ -616,55 +630,119 @@
           <td class="num">41,279</td>
           <td>updated 2026-06-27, pushed 2026-06-27</td>
           <td>가장 활발한 character platform reference. provider layering, web/native expansion 참고.</td>
-          <td>패턴 참고. latency core 숫자 비교는 하지 않음.</td>
+          <td>공통 fixture 없음. 속도 숫자 미부여.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber">Open-LLM-VTuber</a></td>
           <td class="num">11,943</td>
           <td>updated 2026-06-27, pushed 2026-05-15</td>
           <td>VTuber app architecture, interruption/provider boundary 참고.</td>
-          <td>전면 port보다 selectively adopt.</td>
+          <td>공통 fixture 없음. interruption 패턴만 참고.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/livekit/agents">LiveKit Agents</a></td>
           <td class="num">11,153</td>
           <td>updated 2026-06-27, pushed 2026-06-27</td>
           <td>Realtime voice agent framework source reference. OpenAI plugin, turn detection default 확인.</td>
-          <td>server_vad 200 ms 및 Realtime session shape 교차 확인.</td>
+          <td>source-level reference. 직접 benchmark 대상 아님.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/KoljaB/RealtimeVoiceChat">RealtimeVoiceChat</a></td>
           <td class="num">3,776</td>
           <td>updated 2026-06-27, pushed 2025-07-11</td>
           <td>cascade voice chat, RealtimeSTT/TTS, interruption pattern 참고.</td>
-          <td>audio-native Realtime default가 더 빠른 방향으로 판단.</td>
+          <td>cascade 구조라 동일 boundary 없음. 숫자 미부여.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/kimjammer/Neuro">Neuro</a></td>
           <td class="num">1,993</td>
           <td>updated 2026-06-27, pushed 2025-01-17</td>
           <td>memory, priority prompt injection, Twitch module reference.</td>
-          <td>latency core보다 async context/memory 설계에 반영.</td>
+          <td>latency core보다 memory/context 참고.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/ardha27/AI-Waifu-Vtuber">AI-Waifu-Vtuber</a></td>
           <td class="num">1,089</td>
           <td>updated 2026-06-26, pushed 2026-05-31</td>
           <td>legacy streaming/chat VTuber reference.</td>
-          <td>modern Realtime GA 기준으로는 낮은 우선순위.</td>
+          <td>legacy OpenAI/TTS 경로. 숫자 미부여.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/StudioMovieGirl/AIRIS-VtuberAI">AIRIS-VtuberAI</a></td>
           <td class="num">148</td>
           <td>updated 2026-06-22, pushed 2026-01-03</td>
           <td>local/GPU pipeline, sentence-level early TTS trigger reference.</td>
-          <td>external TTS profile에는 이미 sentence chunking/ordered playback 방향 반영.</td>
+          <td>local/GPU stack. 동일 model/boundary 아님.</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3>Setup attempt results</h3>
+    <p>Setup duration은 dependency readiness 진단용이다. zemory-sama의 0.0s는 이미 lockfile과 local cache가 준비된 warm-cache <code>uv sync --frozen</code> audit 결과라서, 프로젝트 우수성 지표로 쓰지 않는다. 이 표는 “공통 runtime benchmark까지 가기 전 환경 준비가 통과했는가”만 보여준다.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Repository</th>
+          <th>Status</th>
+          <th class="num">Duration</th>
+          <th>Command / environment</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>MeroZemory/zemory-sama</td>
+          <td class="status-good">pass</td>
+          <td class="num">0.0s</td>
+          <td><code>uv sync --frozen</code></td>
+          <td>warm-cache audit only; not used as a headline claim.</td>
+        </tr>
+        <tr>
+          <td>ardha27/AI-Waifu-Vtuber</td>
+          <td class="status-good">pass</td>
+          <td class="num">3.7s</td>
+          <td>requirements after PortAudio</td>
+          <td>Dependencies installed; runtime still needs provider/chat setup.</td>
+        </tr>
+        <tr>
+          <td>Open-LLM-VTuber/Open-LLM-VTuber</td>
+          <td class="status-good">pass</td>
+          <td class="num">28.3s</td>
+          <td><code>uv sync --locked --no-install-project</code></td>
+          <td>Dependencies installed; no common latency fixture used.</td>
+        </tr>
+        <tr>
+          <td>kimjammer/Neuro</td>
+          <td class="status-good">pass</td>
+          <td class="num">29.0s</td>
+          <td>macOS ARM64 Python 3.11</td>
+          <td>Dependencies installed with warning; memory/chat reference.</td>
+        </tr>
+        <tr>
+          <td>KoljaB/RealtimeVoiceChat</td>
+          <td class="status-good">pass</td>
+          <td class="num">33.2s</td>
+          <td>requirements after PortAudio</td>
+          <td>Dependencies installed; cascade path not directly comparable.</td>
+        </tr>
+        <tr>
+          <td>moeru-ai/airi</td>
+          <td class="status-good">pass</td>
+          <td class="num">201.5s</td>
+          <td><code>pnpm install --frozen-lockfile --ignore-scripts</code></td>
+          <td>Large monorepo setup passed; platform reference.</td>
+        </tr>
+        <tr>
+          <td>StudioMovieGirl/AIRIS-VtuberAI</td>
+          <td class="status-good">pass</td>
+          <td class="num">865.1s</td>
+          <td>Docker linux/amd64 + build tools + PortAudio</td>
+          <td>Setup passed only with containerized compatibility path.</td>
         </tr>
       </tbody>
     </table>
     <figure>
       <img src="reference-landscape.svg" alt="Reference repository landscape SVG">
-      <figcaption>외부 repo의 stars는 adoption context다. 속도 순위로 해석하면 안 된다.</figcaption>
+      <figcaption>외부 repo의 stars와 setup은 context다. 속도 순위로 해석하면 안 된다.</figcaption>
     </figure>
   </section>
 
