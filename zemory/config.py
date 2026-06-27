@@ -93,7 +93,7 @@ class RealtimeSession(BaseSettings):
 
     # Realtime GA profile: semantic_vad is the default, server_vad is fallback.
     turn_detection: Literal["semantic_vad", "server_vad"] = "semantic_vad"
-    semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "medium"
+    semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "high"
     server_vad_threshold: float = 0.5
     server_vad_prefix_padding_ms: int = 300
     server_vad_silence_duration_ms: int = 700
