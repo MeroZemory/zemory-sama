@@ -20,6 +20,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
         voice="Yuna",
         eagerness="high",
         turn_detection="semantic_vad",
+        server_vad_threshold=0.5,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=100.25,
@@ -30,6 +31,7 @@ def test_event_from_timings_records_vad_and_model_audio_segments() -> None:
     assert event["voice"] == "Yuna"
     assert event["eagerness"] == "high"
     assert event["turn_detection"] == "semantic_vad"
+    assert event["server_vad_threshold"] == 0.5
     assert event["sample_source"] == "macos_say_semantic_vad"
     assert event["total_ms"] == pytest.approx(750.0)
     assert event["vad_wait_ms"] == pytest.approx(250.0)
@@ -42,6 +44,7 @@ def test_event_from_timings_excludes_early_cutoff_from_latency_samples() -> None
         voice="Samantha",
         eagerness="high",
         turn_detection="server_vad",
+        server_vad_threshold=0.5,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=99.5,
@@ -60,6 +63,7 @@ def test_event_from_timings_excludes_speech_stop_before_audio_end() -> None:
         voice="Samantha",
         eagerness="high",
         turn_detection="server_vad",
+        server_vad_threshold=0.5,
         mode="semantic_vad",
         audio_end_at=100.0,
         speech_stopped_at=99.7,
