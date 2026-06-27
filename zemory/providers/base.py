@@ -68,6 +68,12 @@ class LLMProvider(Protocol):
     async def cancel_current(self) -> None:
         """Abort the in-flight response (barge-in)."""
 
+    async def commit_input_audio_buffer(self) -> None:
+        """Commit streamed audio for a manual Realtime turn."""
+
+    async def trigger_response(self) -> None:
+        """Request a response after a manual Realtime commit."""
+
     async def events(self) -> AsyncIterator[dict]:
         """Yield normalized events::
 
@@ -119,12 +125,13 @@ def build_pipeline(
     if/else is clearer given only two profiles.
     """
     # Late imports break a circular dependency (providers → config → ...).
-    from zemory.config import canonical_profile
+    from zemory.config import canonical_profile, settings
     from zemory.providers.llm.openai_realtime import OpenAIRealtimeLLM
     from zemory.providers.stt.null import NullSTT
     from zemory.providers.stt.openai_whisper import WhisperSTT
     from zemory.providers.tts.elevenlabs import ElevenLabsTTS
     from zemory.providers.tts.null import NullTTS
+    from zemory.providers.turn.realtime_manual import RealtimeManualTurnDetector
     from zemory.providers.turn.server_vad import ServerVADTurnDetector
     from zemory.providers.turn.silero import SileroTurnDetector
 
@@ -133,14 +140,22 @@ def build_pipeline(
 
     if profile == "realtime_audio":
         return PipelineBundle(
-            turn=ServerVADTurnDetector(llm=llm),
+            turn=(
+                RealtimeManualTurnDetector(llm=llm)
+                if settings.realtime.turn_detection == "none"
+                else ServerVADTurnDetector(llm=llm)
+            ),
             stt=NullSTT(),
             llm=llm,
             tts=NullTTS(),
         )
     if profile == "realtime_text_external_tts":
         return PipelineBundle(
-            turn=ServerVADTurnDetector(llm=llm),
+            turn=(
+                RealtimeManualTurnDetector(llm=llm)
+                if settings.realtime.turn_detection == "none"
+                else ServerVADTurnDetector(llm=llm)
+            ),
             stt=NullSTT(),
             llm=llm,
             tts=ElevenLabsTTS(api_key=elevenlabs_api_key),

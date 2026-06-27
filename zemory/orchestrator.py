@@ -101,6 +101,10 @@ async def run() -> None:
         elevenlabs_api_key=ELEVENLABS_API_KEY,
     )
     profile = canonical_profile(settings.profile)
+    manual_realtime_turns = (
+        profile in {"realtime_audio", "realtime_text_external_tts"}
+        and settings.realtime.turn_detection == "none"
+    )
 
     mic = MicrophoneStream(loop)
     speaker = SpeakerStream(loop)
@@ -295,8 +299,9 @@ async def run() -> None:
                 await pipeline.turn.feed(pcm)
 
     async def turn_event_consumer() -> None:
-        """Local profile only: speech_end → STT → LLM text inject."""
-        if profile != "local_cascade":
+        """Handle local or manual-Realtime turn detector events."""
+        nonlocal turn_seq
+        if profile != "local_cascade" and not manual_realtime_turns:
             return
         while True:
             event = await pipeline.turn.events.get()
@@ -307,6 +312,22 @@ async def run() -> None:
                 timer.speech_end_ts = time.monotonic()
                 await state.transition(Phase.RESPONDING)
                 speaker.arm()
+
+                if manual_realtime_turns:
+                    turn_seq += 1
+                    timer.__init__(turn_seq)
+                    timer.speech_end_ts = state.speech_end_ts
+                    tts_manager.reset_for_new_turn()
+                    interrupt_bus.reset_partial()
+                    _reset_generation_state()
+                    gen_response_active[0] = True
+                    await pipeline.llm.commit_input_audio_buffer()
+                    await pipeline.llm.trigger_response()
+                    reset = getattr(pipeline.turn, "reset", None)
+                    if callable(reset):
+                        reset()
+                    continue
+
                 chunks = pipeline.turn.consume_audio()
                 text = await pipeline.stt.transcribe(chunks)
                 if not text or text == "[transcription failed]":
@@ -315,7 +336,6 @@ async def run() -> None:
                     await state.transition(Phase.LISTENING)
                     continue
                 raw_text = text
-                nonlocal turn_seq
                 turn_seq += 1
                 timer.__init__(turn_seq)
                 timer.speech_end_ts = state.speech_end_ts

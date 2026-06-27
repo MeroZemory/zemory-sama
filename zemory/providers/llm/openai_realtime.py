@@ -66,6 +66,10 @@ class OpenAIRealtimeLLM:
         if self._conn:
             await self._conn.input_audio_buffer.clear()
 
+    async def commit_input_audio_buffer(self) -> None:
+        if self._conn:
+            await self._conn.input_audio_buffer.commit()
+
     async def send_user_text(
         self, text: str, injections: list[Injection] | None = None
     ) -> None:
