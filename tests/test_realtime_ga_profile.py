@@ -92,6 +92,18 @@ def test_realtime_audio_pipeline_does_not_require_external_tts() -> None:
     assert type(bundle.tts).__name__ == "NullTTS"
 
 
+def test_realtime_audio_turn_detection_none_uses_manual_endpoint(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.settings.realtime, "turn_detection", "none")
+
+    bundle = build_pipeline(
+        "realtime_audio",
+        openai_api_key="test-openai",
+        elevenlabs_api_key="",
+    )
+
+    assert type(bundle.turn).__name__ == "RealtimeManualTurnDetector"
+
+
 def test_realtime_audio_config_import_does_not_require_elevenlabs_key() -> None:
     env = os.environ.copy()
     env["PYTHONPATH"] = "."

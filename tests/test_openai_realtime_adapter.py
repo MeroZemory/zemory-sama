@@ -22,12 +22,16 @@ class FakeInputAudioBuffer:
     def __init__(self) -> None:
         self.appended: list[str] = []
         self.cleared = 0
+        self.committed = 0
 
     async def append(self, *, audio: str) -> None:
         self.appended.append(audio)
 
     async def clear(self) -> None:
         self.cleared += 1
+
+    async def commit(self) -> None:
+        self.committed += 1
 
 
 class FakeConversationItem:
@@ -152,5 +156,19 @@ async def test_adapter_pushes_audio_and_text_items_through_connection() -> None:
     assert conn.conversation.item.created[0]["content"][0]["text"] == "early context"
     assert conn.conversation.item.created[-1]["content"][0]["text"] == "interrupted note"
     assert conn.response.created == 1
+
+    await llm.close()
+
+
+@pytest.mark.asyncio
+async def test_adapter_commits_input_audio_buffer() -> None:
+    conn = FakeConnection()
+    client = FakeClient(FakeConnectionManager(conn))
+    llm = OpenAIRealtimeLLM(api_key="test", client=client)
+    await llm.open_session()
+
+    await llm.commit_input_audio_buffer()
+
+    assert conn.input_audio_buffer.committed == 1
 
     await llm.close()
