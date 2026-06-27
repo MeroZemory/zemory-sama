@@ -485,29 +485,50 @@ async def _run(args: argparse.Namespace) -> None:
                 events.append(event)
                 print(event, flush=True)
 
-    metric_note = (
-        "Metric is final source-audio chunk sent to first local speaker playback callback; "
-        "api_first_audio_ms retains the API first-audio delta timestamp."
-        if args.play_output
-        else "Metric is final source-audio chunk sent to first response audio delta."
-    )
-    source_note = (
-        f"{len(events)} macOS say fixtures streamed as realtime 24 kHz PCM. "
-        f"Mode={args.mode}; turn_detection={args.turn_detection}; "
-        f"semantic_vad eagerness={args.eagerness}; "
-        f"server_vad threshold={args.server_vad_threshold}; "
-        f"server_vad silence={args.server_vad_silence_ms} ms. "
-        f"local endpoint misses={args.local_endpoint_required_misses}. "
-        f"Input chunk={args.input_chunk_ms} ms. "
-        f"play_output={args.play_output}. "
-        f"{metric_note} "
-        "raw transcripts are not recorded."
+    from zemory import config as cfg
+
+    source_note = _source_note(
+        args,
+        event_count=len(events),
+        response_length=cfg.settings.response_length,
     )
     _write_live_benchmark_artifacts(
         events,
         out_dir=args.out,
         title=args.title,
         source_note=source_note,
+    )
+
+
+def _source_note(
+    args: argparse.Namespace,
+    *,
+    event_count: int,
+    response_length: str,
+) -> str:
+    metric_note = (
+        "Metric is final source-audio chunk sent to first local speaker playback callback; "
+        "api_first_audio_ms retains the API first-audio delta timestamp."
+        if args.play_output
+        else "Metric is final source-audio chunk sent to first response audio delta."
+    )
+    local_endpoint_note = (
+        f"local endpoint misses={args.local_endpoint_required_misses}. "
+        if args.mode == "local_endpoint_commit"
+        else ""
+    )
+    return (
+        f"{event_count} macOS say fixtures streamed as realtime 24 kHz PCM. "
+        f"Mode={args.mode}; turn_detection={args.turn_detection}; "
+        f"semantic_vad eagerness={args.eagerness}; "
+        f"server_vad threshold={args.server_vad_threshold}; "
+        f"server_vad silence={args.server_vad_silence_ms} ms. "
+        f"{local_endpoint_note}"
+        f"Input chunk={args.input_chunk_ms} ms. "
+        f"response length={response_length}. "
+        f"play_output={args.play_output}. "
+        f"{metric_note} "
+        "raw transcripts are not recorded."
     )
 
 

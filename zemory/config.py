@@ -158,7 +158,7 @@ class Settings(BaseSettings):
     stt_model: str = "gpt-4o-transcribe"
 
     # --- behaviour ---
-    response_length: str = "1-2 sentences"
+    response_length: str = "one short sentence"
 
     # --- barge-in / interrupt handling ---
     # Default off: speaker audio leaking into the mic on laptops without
