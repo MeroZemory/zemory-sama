@@ -17,7 +17,7 @@
 | [Realtime and audio](https://developers.openai.com/api/docs/guides/realtime) | 저지연 voice agent 시작점은 `gpt-realtime-2`이며, live audio session 과 chained voice pipeline 을 구분한다. GA migration 은 beta header 제거, 새 session/event shape, output audio config 사용을 요구한다. | 기본 fast path 를 `gpt-realtime-2` audio-in/audio-out으로 둔다. 기존 preview/text-only 전제는 낡았다. |
 | [Voice agents](https://developers.openai.com/api/docs/guides/voice-agents) | 자연스러운 저지연 대화, barge-in, realtime tool use 는 speech-to-speech live audio session 이 적합하다. chained pipeline 은 중간 텍스트 제어가 중요할 때 적합하다. | audio-native profile 을 기본값, text+TTS 체인은 선택 프로파일로 둔다. |
 | [Realtime conversations](https://developers.openai.com/api/docs/guides/realtime-conversations) | Realtime session 예시는 `model: "gpt-realtime-2"`, `output_modalities: ["audio"]`, `semantic_vad`, output voice `marin`을 사용한다. 세션 최대 길이는 60분이다. | config/schema/event adapter 를 GA 기준으로 업데이트한다. 장기 세션 compaction 이 필요하다. |
-| [Voice activity detection](https://developers.openai.com/api/docs/guides/realtime-vad) | `server_vad`는 침묵 기반, `semantic_vad`는 사용자가 말을 끝냈는지 의미 기반으로 판단한다. `semantic_vad`는 `eagerness`로 조절한다. | 한국어 턴 종료는 `semantic_vad` 우선, `server_vad`/Silero fallback 으로 둔다. |
+| [Voice activity detection](https://developers.openai.com/api/docs/guides/realtime-vad) | `server_vad`는 침묵 기반, `semantic_vad`는 사용자가 말을 끝냈는지 의미 기반으로 판단한다. `semantic_vad`는 `eagerness`로 조절한다. | 한국어/영어 턴 종료는 `semantic_vad` 우선, `server_vad`/Silero fallback 으로 둔다. |
 | [Realtime with tools](https://developers.openai.com/api/docs/guides/realtime-mcp) | Realtime session 에 function tool, remote MCP server, built-in connector 를 붙일 수 있다. tool 은 session 또는 response 단위로 설정 가능하다. | memory/RAG/tool 은 sideband/async layer 로 설계하고, pending result 처리를 명시한다. |
 | [Developer notes on Realtime API](https://developers.openai.com/blog/realtime-api) | GA Realtime 은 image input, async function calling, MCP, audio token to text, long context, SIP, idle timeout 등을 포함한다. 세션은 최대 60분, `gpt-realtime` 계열 context 는 32,768 tokens, response max 는 4,096 tokens, instructions+tools max 는 16,384 tokens 이다. | 자동 truncation 에 맡기지 말고 TranscriptLedger/ContextCompactor 를 둔다. MCP와 async function calling 은 GA 경로에서 다룬다. |
 
@@ -32,7 +32,7 @@
 | [Stream RAG](https://arxiv.org/abs/2510.02044) | 2025-10 | 사용자 발화가 끝나기 전에 tool query 를 예측해 tool latency 를 줄인다. | user turn 완료 전 async tool/RAG scheduling 의 근거가 된다. |
 | [BayLing-Duplex](https://arxiv.org/abs/2606.14528) | 2026-06 | 단일 autoregressive LLM으로 listen/speak/stop 을 결정하는 native full-duplex speech dialogue 를 제안한다. | 장기 방향은 auxiliary turn-taking 축소다. 현재는 실험 프로파일로만 둔다. |
 | [TurnGuide](https://arxiv.org/abs/2508.07375) | 2025-08, updated 2026-06 | turn-level text-speech interleaving 으로 full-duplex speech model 의 coherence 와 turn-taking 을 개선한다. | text/speech interleaving 평가는 research benchmark 에 포함한다. |
-| [Raon-Speech](https://arxiv.org/abs/2605.23912) | 2026-04 | English/Korean 9B speech LM과 full-duplex Raon-SpeechChat pipeline 을 공개한다. | 한국어 full-duplex 후보로 중요하다. hardware/cost 검증 전 production 기본값은 아니다. |
+| [Raon-Speech](https://arxiv.org/abs/2605.23912) | 2026-04 | English/Korean 9B speech LM과 full-duplex Raon-SpeechChat pipeline 을 공개한다. | bilingual full-duplex 후보로 중요하다. hardware/cost 검증 전 production 기본값은 아니다. |
 
 ## 3. Reference Project Snapshot
 
@@ -60,7 +60,7 @@
 
 1. **Default to audio-native Realtime**: OpenAI 공식 문서가 저지연 voice agent 에 `gpt-realtime-2` live audio session 을 직접 제시하므로, external TTS 체인을 기본 경로로 둘 이유가 약해졌다.
 2. **Keep chained voice as a profile**: 외부 TTS 목소리와 중간 텍스트 제어가 필요할 때는 chained pipeline 이 여전히 맞다.
-3. **Prefer semantic VAD, measure Korean**: semantic VAD는 의미 기반 turn completion 이라 한국어 어미 처리에 유리할 수 있다. 단, fixture 로 검증한다.
+3. **Prefer semantic VAD, measure multilingual turns**: semantic VAD는 의미 기반 turn completion 이라 한국어 어미와 영어 fragment/backchannel 처리에 유리할 수 있다. 단, fixture 로 검증한다.
 4. **Make RAG asynchronous**: 2025-2026 연구들은 retrieval/tool latency 를 대화 흐름과 분리하는 방향을 반복해서 보여준다.
-5. **Treat full-duplex SLMs as watch/research**: Moshi/Raon/BayLing 계열은 방향성이 강하지만, hardware, model quality, Korean behavior, integration cost 검증 전에는 production default 가 아니다.
+5. **Treat full-duplex SLMs as watch/research**: Moshi/Raon/BayLing 계열은 방향성이 강하지만, hardware, model quality, multilingual behavior, integration cost 검증 전에는 production default 가 아니다.
 6. **Use active references conservatively**: AIRI는 active architecture reference, Open-LLM-VTuber는 v2 rewrite watch, RealtimeVoiceChat/Neuro는 pattern-only다.

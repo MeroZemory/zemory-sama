@@ -1,6 +1,6 @@
 # zemory-sama
 
-Low-latency realtime voice conversation runtime for Korean-friendly AI agents.
+Low-latency realtime voice conversation runtime for multilingual AI agents.
 
 `zemory-sama` is a Python CLI voice agent core. It focuses on the hard part of a
 voice-first assistant before UI, avatar rendering, or streaming integrations:
@@ -13,10 +13,34 @@ The default runtime uses OpenAI Realtime GA audio-in/audio-out with
 local VAD/STT remain available as explicit profiles rather than the default
 fast path.
 
+## One-Prompt Setup For Coding Agents
+
+Paste this into Claude Code, Codex, or another repository-aware coding agent:
+
+```text
+Set up and validate this repository for local manual testing.
+
+Rules:
+- Read the repo instructions and inspect the current tree before changing files.
+- Do not read, print, commit, or infer secrets from .env.
+- Use built-in agent tools when available: plan for multi-step work, ask_user/request_user_input only when a missing secret or hardware decision blocks progress, and use repository search instead of guessing.
+- Keep changes surgical. If setup requires edits, explain why and verify them.
+
+Steps:
+1. Inspect README.md, pyproject.toml, config.toml, zemory/config.py, zemory/orchestrator.py, and tests/.
+2. Run uv sync.
+3. If .env is missing, create it from .env.example without inventing API keys. Tell the user to set OPENAI_API_KEY; ELEVENLABS_API_KEY is only needed for external TTS profiles.
+4. Run uv run pytest tests/, uv run ruff check zemory tests scripts, and uv run python -m compileall zemory tests scripts.
+5. If checks pass and OPENAI_API_KEY is present, start a manual voice session with uv run python -m zemory. For a detachable session, use tmux new-session -s zemory-sama-test 'uv run python -m zemory'.
+6. Report the active profile, whether Realtime reached session.configured, where logs are stored, and the stop command.
+```
+
 ## What It Does
 
 - Streams microphone PCM to OpenAI Realtime and plays audio deltas directly.
 - Uses `semantic_vad` by default for more natural turn endings.
+- Mirrors the user's language by default, so Korean and English conversation
+  both stay natural without switching profiles.
 - Supports barge-in: clear speaker output, cancel pending TTS work, cancel the
   active Realtime response, and preserve interrupted assistant partials.
 - Keeps provider boundaries small: turn detection, STT, LLM, and TTS can be

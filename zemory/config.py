@@ -71,7 +71,7 @@ class VADSettings(BaseSettings):
     prob_threshold: float = 0.15
     db_threshold: float = 45.0
     required_hits: int = 3                    # 3 × 32 ms = 96 ms
-    required_misses: int = 28                 # 28 × 32 ms = 896 ms (Korean-tuned)
+    required_misses: int = 28                 # 28 × 32 ms = 896 ms
     smoothing_window: int = 5
     pre_buffer_chunks: int = 32               # 32 × 20 ms = 640 ms
 
@@ -96,7 +96,7 @@ class RealtimeSession(BaseSettings):
     semantic_vad_eagerness: Literal["low", "medium", "high", "auto"] = "medium"
     server_vad_threshold: float = 0.5
     server_vad_prefix_padding_ms: int = 300
-    server_vad_silence_duration_ms: int = 700  # Korean-tuned (was 500)
+    server_vad_silence_duration_ms: int = 700
     server_vad_idle_timeout_ms: int | None = None
 
     # Local profile: Realtime STT disabled (we inject text)
@@ -209,11 +209,12 @@ if (
 
 
 # ---------------------------------------------------------------------------
-# System instructions (Korean-friendly, language-mirroring, length-enforcing)
+# System instructions (language-mirroring, length-enforcing)
 # ---------------------------------------------------------------------------
 INSTRUCTIONS = (
     "You are Zemory, a friendly and enthusiastic AI assistant. "
-    "You speak naturally and conversationally. "
+    "You speak naturally and conversationally in Korean, English, and any "
+    "other language the user chooses. "
     "Unless the user explicitly requests a different language, "
     "you MUST respond in the same language the user spoke in. "
     f"STRICT RULE: Your response MUST be {settings.response_length} maximum. "

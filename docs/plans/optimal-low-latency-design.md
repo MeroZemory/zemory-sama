@@ -6,7 +6,7 @@
 ## 0. Assumptions
 
 - 이 설계는 현재 Python CLI/서버형 코어를 유지한다. 브라우저 WebRTC 클라이언트, VRM, OBS 연동은 다음 단계다.
-- 1차 사용자 경험은 한국어 친화적인 저지연 음성 대화다. 텍스트 채팅, 방송 채팅, 게임/도구 연동은 사이드 입력이다.
+- 1차 사용자 경험은 다국어 저지연 음성 대화다. 한국어와 영어를 우선 fixture 로 검증하고, 텍스트 채팅, 방송 채팅, 게임/도구 연동은 사이드 입력이다.
 - 기존 구현의 provider/profile 방향은 유지하되, 기본 fast path 는 외부 TTS 체인이 아니라 OpenAI Realtime GA의 오디오 네이티브 세션으로 바꾼다.
 - 최신 풀듀플렉스 음성 모델 연구는 중요하지만, 지금 기본 런타임으로 채택하지 않는다. 검증 전까지는 실험 프로파일로 둔다.
 
@@ -34,7 +34,7 @@
 | Barge-in | assistant 발화 중 사용자 speech start 이후 로컬 스피커 무음 <= 150 ms |
 | RAG 영향 | 메모리/도구 작업을 켜도 첫 오디오 p50 증가 <= 50 ms |
 | 장기 세션 | 60분 세션에서 context truncation 전 자체 compaction 또는 durable summary 수행 |
-| 한국어 턴 종료 | 한국어 fixture 에서 조기 끊김과 늦은 응답을 별도 지표로 측정 |
+| 언어별 턴 종료 | 한국어/영어 fixture 에서 조기 끊김과 늦은 응답을 별도 지표로 측정 |
 | 회귀 검증 | unit test, lint, latency fixture, interruption fixture가 통과해야 release 후보 |
 
 ## 3. Runtime Profiles
@@ -44,7 +44,7 @@
 | `realtime_audio` | 기본 | OpenAI Realtime GA, `gpt-realtime-2`, audio input/output, `semantic_vad`, WebSocket server transport | 가장 낮은 체감 지연, barge-in, 자연스러운 턴 처리 |
 | `realtime_text_external_tts` | 선택 | Realtime text output, SentenceChunker, TTSTaskManager, ElevenLabs/Kokoro TTS | 특정 목소리 품질이나 외부 TTS가 더 중요한 캐릭터 |
 | `local_cascade` | fallback | Silero VAD, Whisper/STT, text LLM, external/local TTS | API 장애, 비용 제어, 오프라인/개발 환경 |
-| `research_full_duplex` | 실험 | Moshi/Raon/BayLing 계열 또는 compatible local SLM | 논문 재현, 한국어 풀듀플렉스 평가 |
+| `research_full_duplex` | 실험 | Moshi/Raon/BayLing 계열 또는 compatible local SLM | 논문 재현, 다국어 풀듀플렉스 평가 |
 
 ## 4. Target Architecture
 
@@ -89,7 +89,7 @@ ResponseStream
 - `output_modalities = ["audio"]`
 - input format: PCM 24 kHz
 - output voice: `marin` 또는 `cedar`를 기본 후보로 둔다.
-- turn detection: `semantic_vad` with `eagerness = "medium"` 기본, 한국어 fixture 에서 조정한다.
+- turn detection: `semantic_vad` with `eagerness = "medium"` 기본, 한국어/영어 fixture 에서 조정한다.
 - beta header (`OpenAI-Beta: realtime=v1`)와 오래된 event shape는 사용하지 않는다.
 - 새 event 이름(`response.output_audio.delta`, `response.output_audio_transcript.delta`, `response.output_text.delta`)을 기준으로 adapter 를 작성한다.
 
@@ -111,13 +111,13 @@ Realtime 세션은 60분까지 갈 수 있지만 context window 는 무한하지
 
 ### Default: semantic VAD
 
-`semantic_vad`는 사용자가 실제로 발화를 끝냈는지를 단어 의미 기반으로 판단한다. 한국어에서는 조사/어미 끝맺음이 중요하므로 침묵 시간만 보는 로직보다 우선순위가 높다.
+`semantic_vad`는 사용자가 실제로 발화를 끝냈는지를 단어 의미 기반으로 판단한다. 한국어의 조사/어미 끝맺음과 영어의 짧은 backchannel/fragment 모두 침묵 시간만 보는 로직으로는 다루기 어렵기 때문에 기본값으로 둔다.
 
 튜닝 값:
 
 - `eagerness = "medium"` 기본.
 - 끊김이 많으면 `low`.
-- 응답이 느리면 `high`를 실험하되 한국어 fixture 에서만 승격한다.
+- 응답이 느리면 `high`를 실험하되 한국어/영어 fixture 에서만 승격한다.
 
 ### Fallback: server VAD
 
@@ -137,7 +137,7 @@ Endpoint Anticipation 연구는 최대 2.56초 선행 예측과 speculative LLM/
 
 - partial transcript 가 안정된 뒤 speculative turn 을 시작한다.
 - 사용자가 계속 말하면 즉시 cancel 한다.
-- 추가 compute 비율, 잘못 시작한 응답 비율, 한국어 오검출률을 metrics 로 기록한다.
+- 추가 compute 비율, 잘못 시작한 응답 비율, 언어별 오검출률을 metrics 로 기록한다.
 - 기본값으로 켜지 않는다.
 
 ## 7. Interrupt and Barge-in
@@ -221,7 +221,7 @@ PromptAssembler는 유지하되, Realtime audio profile 에 맞게 역할을 바
 - session instructions: 캐릭터 핵심, 안전, 말투, 답변 길이.
 - dynamic context: 최근 transcript summary, memory hits, side input.
 - tool policy: 언제 도구를 부를지, pending 결과를 어떻게 말할지.
-- speech policy: 한국어로 짧게 시작하고, 불확실하면 확인 질문을 먼저 한다.
+- speech policy: 사용자가 말한 언어로 짧게 시작하고, 불확실하면 확인 질문을 먼저 한다.
 
 Priority 는 단순하게 유지한다.
 
@@ -254,7 +254,8 @@ Priority 는 단순하게 유지한다.
 
 - 한국어 짧은 명령
 - 한국어 긴 종결어미 문장
-- 영어 문장
+- 영어 짧은 명령
+- 영어 긴 fragment/backchannel 문장
 - assistant 발화 중 barge-in
 - tool/RAG 지연 0 ms, 200 ms, 1000 ms
 - noisy silence
@@ -317,7 +318,7 @@ Release gate:
 ### Phase 6: Research profile
 
 - Moshi/MoshiRAG/Raon-Speech/BayLing 계열을 별도 branch/profile 로 평가한다.
-- 한국어 풀듀플렉스, interruption, backchannel, factuality benchmark 를 만든다.
+- 한국어/영어 풀듀플렉스, interruption, backchannel, factuality benchmark 를 만든다.
 - production 승격은 latency, stability, hardware cost 를 통과한 뒤만 한다.
 
 ## 14. Deferred Decisions

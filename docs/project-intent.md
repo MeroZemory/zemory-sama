@@ -6,9 +6,9 @@
 
 ## One Sentence
 
-`zemory-sama` is a Python runtime for Korean-friendly, low-latency realtime
-voice conversation. Its current purpose is to make the conversation core fast
-and reliable before adding avatar rendering, web UI, or streaming platform
+`zemory-sama` is a Python runtime for multilingual, low-latency realtime voice
+conversation. Its current purpose is to make the conversation core fast and
+reliable before adding avatar rendering, web UI, or streaming platform
 integrations.
 
 ## What The Project Optimizes For
@@ -18,6 +18,7 @@ The project is optimized for the moment after a user stops speaking:
 - detect the end of the user turn naturally
 - start audible assistant output quickly
 - allow the user to interrupt the assistant
+- mirror the user's spoken language, including Korean and English
 - preserve enough transcript and memory context for coherent follow-up turns
 - keep provider boundaries simple enough to replace model, VAD, STT, or TTS
 
