@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
   <title id="title">Reference repository evidence matrix</title>
   <desc id="desc">Public reference repositories are compared by role, setup result, and whether direct latency evidence exists. They are not ranked by speed.</desc>
-  <rect width="1200" height="560" fill="#f8fafc"/>
+  <rect width="1200" height="560" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Reference repos: evidence matrix</text>
-  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Names are shown for traceability. Direct latency ranking is intentionally not shown without a common fixture.</text>
+  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">Names are shown for traceability. Direct latency ranking is intentionally not shown without a common fixture.</text>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <text x="32" y="110" fill="#64748b">Project</text>
-    <text x="262" y="110" fill="#64748b">Primary role</text>
-    <text x="550" y="110" fill="#64748b">Setup attempt</text>
-    <text x="760" y="110" fill="#64748b">Latency evidence</text>
-    <text x="1000" y="110" fill="#64748b">Use in realtime-voice-runtime</text>
+    <text x="32" y="110" fill="#475569">Project</text>
+    <text x="262" y="110" fill="#475569">Primary role</text>
+    <text x="550" y="110" fill="#475569">Setup attempt</text>
+    <text x="760" y="110" fill="#475569">Latency evidence</text>
+    <text x="1000" y="110" fill="#475569">Use in realtime-voice-runtime</text>
     <line x1="32" y1="122" x2="1168" y2="122" stroke="#cbd5e1"/>
   </g>
 

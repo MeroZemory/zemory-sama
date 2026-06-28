@@ -1,32 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
-  <title id="title">Response length benchmark</title>
-  <desc id="desc">Comparison between old 1-2 sentence response length and one short sentence default.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="rl-title rl-desc">
+  <title id="rl-title">Response length benchmark</title>
+  <desc id="rl-desc">Comparison between old 1-2 sentence response length and one short sentence default. Both device playback boundary, 06-28, n8.</desc>
   <rect width="1200" height="340" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Response length cap: p50 mixed, representative tail better</text>
-  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">8 live fixtures each, server_vad 200 ms, 20 ms chunks, first local speaker playback callback.</text>
+  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">8 live fixtures each, server_vad 200 ms, 20 ms chunks, first local speaker playback callback (device 경계).</text>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <text x="32" y="108" fill="#64748b">Run</text>
-    <text x="360" y="108" fill="#64748b">0</text>
-    <text x="504" y="108" fill="#64748b">500</text>
-    <text x="648" y="108" fill="#64748b">1000</text>
-    <text x="792" y="108" fill="#64748b">1500</text>
-    <text x="936" y="108" fill="#64748b">2000 ms</text>
-    <text x="1010" y="108" fill="#64748b">Decision</text>
+    <text x="32" y="108" fill="#475569">Run</text>
+    <text x="360" y="108" fill="#475569">0</text>
+    <text x="504" y="108" fill="#475569">500</text>
+    <text x="648" y="108" fill="#475569">1000</text>
+    <text x="792" y="108" fill="#475569">1500</text>
+    <text x="936" y="108" fill="#475569">2000 ms</text>
+    <text x="1010" y="108" fill="#475569">Decision</text>
     <line x1="360" y1="118" x2="960" y2="118" stroke="#cbd5e1"/>
+  </g>
+
+  <g stroke="#eef2f7" stroke-width="1">
+    <line x1="504" y1="122" x2="504" y2="250"/>
+    <line x1="648" y1="122" x2="648" y2="250"/>
+    <line x1="792" y1="122" x2="792" y2="250"/>
+    <line x1="936" y1="122" x2="936" y2="250"/>
   </g>
 
   <g font-family="Inter, Arial, sans-serif" font-size="13">
     <text x="32" y="164" fill="#111827">old default: 1-2 sentences</text>
-    <rect x="360" y="148" width="364" height="22" rx="3" fill="#94a3b8"/>
-    <line x1="844" y1="144" x2="844" y2="174" stroke="#475569" stroke-width="3"/>
+    <rect x="360" y="148" width="349" height="22" rx="3" fill="#94a3b8"/>
+    <line x1="824" y1="144" x2="824" y2="174" stroke="#475569" stroke-width="3"/>
     <text x="1010" y="164" fill="#334155">p50 1211.8, rep 1612.7</text>
 
     <text x="32" y="222" fill="#111827">current default: one short sentence</text>
-    <rect x="360" y="206" width="378" height="22" rx="3" fill="#22c55e"/>
-    <line x1="810" y1="202" x2="810" y2="232" stroke="#15803d" stroke-width="3"/>
+    <rect x="360" y="206" width="363" height="22" rx="3" fill="#15803d" stroke="#052e16" stroke-width="2"/>
+    <line x1="792" y1="202" x2="792" y2="232" stroke="#14532d" stroke-width="3"/>
     <text x="1010" y="222" fill="#14532d">p50 1261.3, rep 1498.7</text>
   </g>
 
-  <text x="32" y="298" font-family="Inter, Arial, sans-serif" font-size="13" fill="#475569">Decision: keep short response for lower representative tail and shorter spoken output, not because it wins every p50 sample.</text>
+  <text x="32" y="298" font-family="Inter, Arial, sans-serif" font-size="13" fill="#475569">Decision: keep short response for shorter spoken output (1차 근거) and lower representative tail; it does not win the device p50.</text>
 </svg>

@@ -1,69 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
-  <title id="title">realtime-voice-runtime internal latency ablation</title>
-  <desc id="desc">Internal realtime-voice-runtime benchmark runs comparing p50 and representative max latency. This is not a cross-repository speed ranking.</desc>
-  <rect width="1200" height="520" fill="#f8fafc"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="540" viewBox="0 0 1200 540" role="img" aria-labelledby="lc-title lc-desc">
+  <title id="lc-title">realtime-voice-runtime internal latency ablation</title>
+  <desc id="lc-desc">Internal benchmark runs comparing p50 (bars) and representative max (markers). Bars use different measurement boundaries (device playback, API first-audio, commit) labeled per row, so absolute p50 values are not directly comparable across boundaries. This is not a cross-repository speed ranking.</desc>
+  <rect width="1200" height="540" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Internal latency ablation, not a cross-repo leaderboard</text>
-  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">Bars show p50. Thin markers show representative max after extreme-outlier separation.</text>
+  <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">막대=p50, 얇은 마커=representative max. 막대마다 측정 경계가 달라(행 라벨의 경계 태그) p50 가로 직접 비교는 주의.</text>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <text x="32" y="106" fill="#64748b">Run</text>
-    <text x="360" y="106" fill="#64748b">0</text>
-    <text x="490" y="106" fill="#64748b">500</text>
-    <text x="620" y="106" fill="#64748b">1000</text>
-    <text x="750" y="106" fill="#64748b">1500</text>
-    <text x="880" y="106" fill="#64748b">2000 ms</text>
-    <text x="980" y="106" fill="#64748b">Decision</text>
+    <text x="32" y="106" fill="#475569">Run · 경계 (n)</text>
+    <text x="360" y="106" fill="#475569">0</text>
+    <text x="490" y="106" fill="#475569">500</text>
+    <text x="620" y="106" fill="#475569">1000</text>
+    <text x="750" y="106" fill="#475569">1500</text>
+    <text x="880" y="106" fill="#475569">2000 ms</text>
+    <text x="985" y="106" fill="#475569">Decision</text>
     <line x1="360" y1="116" x2="940" y2="116" stroke="#cbd5e1"/>
   </g>
 
+  <g stroke="#eef2f7" stroke-width="1">
+    <line x1="490" y1="120" x2="490" y2="456"/>
+    <line x1="620" y1="120" x2="620" y2="456"/>
+    <line x1="750" y1="120" x2="750" y2="456"/>
+    <line x1="880" y1="120" x2="880" y2="456"/>
+  </g>
+
   <g font-family="Inter, Arial, sans-serif" font-size="13">
-    <text x="32" y="146" fill="#111827">Manual live session, 28 turns</text>
-    <rect x="360" y="130" width="215" height="20" rx="3" fill="#10b981"/>
-    <line x1="808" y1="126" x2="808" y2="154" stroke="#065f46" stroke-width="3"/>
-    <text x="980" y="146" fill="#14532d">p50 816, rep 1698</text>
+    <text x="32" y="146" fill="#111827">Manual live · device · 실대화 (n=28)</text>
+    <rect x="360" y="130" width="212" height="20" rx="3" fill="#94a3b8"/>
+    <line x1="802" y1="126" x2="802" y2="154" stroke="#475569" stroke-width="3"/>
+    <text x="985" y="146" fill="#334155">p50 816, rep 1698</text>
 
-    <text x="32" y="188" fill="#111827">Controlled say lower-bound</text>
-    <rect x="360" y="172" width="242" height="20" rx="3" fill="#34d399"/>
-    <line x1="677" y1="168" x2="677" y2="196" stroke="#047857" stroke-width="3"/>
-    <text x="980" y="188" fill="#14532d">p50 920, rep 1203</text>
+    <text x="32" y="188" fill="#111827">Controlled say · commit경계(VAD제외) (n=6)</text>
+    <rect x="360" y="172" width="239" height="20" rx="3" fill="#94a3b8"/>
+    <line x1="673" y1="168" x2="673" y2="196" stroke="#475569" stroke-width="3"/>
+    <text x="985" y="188" fill="#334155">p50 920, rep 1203</text>
 
-    <text x="32" y="230" fill="#111827">Optimized server_vad 200 ms</text>
-    <rect x="360" y="214" width="277" height="20" rx="3" fill="#22c55e"/>
-    <line x1="716" y1="210" x2="716" y2="238" stroke="#15803d" stroke-width="3"/>
-    <text x="980" y="230" fill="#14532d">p50 1052, rep 1351</text>
+    <text x="32" y="230" fill="#111827">Optimized server_vad 200 · API경계 (n=4)</text>
+    <rect x="360" y="214" width="273" height="20" rx="3" fill="#94a3b8"/>
+    <line x1="711" y1="210" x2="711" y2="238" stroke="#475569" stroke-width="3"/>
+    <text x="985" y="230" fill="#334155">p50 1052, rep 1351</text>
 
-    <text x="32" y="272" fill="#111827">Current short default playback n8</text>
-    <rect x="360" y="256" width="332" height="20" rx="3" fill="#16a34a"/>
-    <line x1="755" y1="252" x2="755" y2="280" stroke="#166534" stroke-width="3"/>
-    <text x="980" y="272" fill="#14532d">p50 1261, rep 1499, kept</text>
+    <text x="32" y="272" fill="#111827" font-weight="700">Current short default · device경계 (n=8)</text>
+    <rect x="360" y="256" width="328" height="20" rx="3" fill="#15803d" stroke="#052e16" stroke-width="2"/>
+    <line x1="750" y1="252" x2="750" y2="280" stroke="#14532d" stroke-width="3"/>
+    <text x="985" y="272" fill="#14532d" font-weight="700">p50 1261, rep 1499, kept</text>
 
-    <text x="32" y="314" fill="#111827">server_vad 200 ms stability n8</text>
-    <rect x="360" y="298" width="327" height="20" rx="3" fill="#84cc16"/>
-    <line x1="758" y1="294" x2="758" y2="322" stroke="#3f6212" stroke-width="3"/>
-    <text x="980" y="314" fill="#365314">p50 1240, rep 1509</text>
+    <text x="32" y="314" fill="#111827">server_vad 200 stability · API경계 (n=8)</text>
+    <rect x="360" y="298" width="322" height="20" rx="3" fill="#22c55e"/>
+    <line x1="752" y1="294" x2="752" y2="322" stroke="#15803d" stroke-width="3"/>
+    <text x="985" y="314" fill="#14532d">p50 1240, rep 1509</text>
 
-    <text x="32" y="356" fill="#111827">server_vad 195 ms n8</text>
-    <rect x="360" y="340" width="317" height="20" rx="3" fill="#f59e0b"/>
-    <line x1="908" y1="336" x2="908" y2="364" stroke="#b45309" stroke-width="3"/>
-    <text x="980" y="356" fill="#78350f">p50 1203, tail worse</text>
+    <text x="32" y="356" fill="#111827">server_vad 195 · API경계 (n=8)</text>
+    <rect x="360" y="340" width="313" height="20" rx="3" fill="#f97316"/>
+    <line x1="901" y1="336" x2="901" y2="364" stroke="#c2410c" stroke-width="3"/>
+    <text x="985" y="356" fill="#7c2d12">p50 1203, tail worse</text>
 
-    <text x="32" y="398" fill="#111827">server_vad 193 ms n8</text>
-    <rect x="360" y="382" width="347" height="20" rx="3" fill="#f97316"/>
-    <line x1="821" y1="378" x2="821" y2="406" stroke="#c2410c" stroke-width="3"/>
-    <text x="980" y="398" fill="#7c2d12">p50 1319, rejected</text>
+    <text x="32" y="398" fill="#111827">server_vad 193 · API경계 (n=8)</text>
+    <rect x="360" y="382" width="343" height="20" rx="3" fill="#f97316"/>
+    <line x1="815" y1="378" x2="815" y2="406" stroke="#c2410c" stroke-width="3"/>
+    <text x="985" y="398" fill="#7c2d12">p50 1319, rejected</text>
 
-    <text x="32" y="440" fill="#111827">Local endpoint miss14 n8</text>
-    <rect x="360" y="424" width="435" height="20" rx="3" fill="#60a5fa"/>
-    <line x1="898" y1="420" x2="898" y2="448" stroke="#2563eb" stroke-width="3"/>
-    <text x="980" y="440" fill="#1e3a8a">p50 1654, stable but slower</text>
+    <text x="32" y="440" fill="#111827">Local endpoint miss14 · device경계 (n=8)</text>
+    <rect x="360" y="424" width="430" height="20" rx="3" fill="#60a5fa"/>
+    <line x1="891" y1="420" x2="891" y2="448" stroke="#2563eb" stroke-width="3"/>
+    <text x="985" y="440" fill="#1e3a8a">p50 1654, probe</text>
   </g>
 
   <g font-family="Inter, Arial, sans-serif" font-size="12">
-    <rect x="32" y="484" width="14" height="10" fill="#16a34a"/>
-    <text x="54" y="493" fill="#334155">kept/default evidence</text>
-    <rect x="220" y="484" width="14" height="10" fill="#f97316"/>
-    <text x="242" y="493" fill="#334155">stable rejected candidate</text>
-    <rect x="442" y="484" width="14" height="10" fill="#60a5fa"/>
-    <text x="464" y="493" fill="#334155">implemented probe, not default</text>
+    <rect x="32" y="486" width="14" height="10" fill="#15803d" stroke="#052e16" stroke-width="2"/>
+    <text x="52" y="495" fill="#334155">현재 기본값(device)</text>
+    <rect x="186" y="486" width="14" height="10" fill="#22c55e"/>
+    <text x="206" y="495" fill="#334155">채택 근거</text>
+    <rect x="292" y="486" width="14" height="10" fill="#94a3b8"/>
+    <text x="312" y="495" fill="#334155">참고(다른 fixture·경계 / lower-bound)</text>
+    <rect x="512" y="486" width="14" height="10" fill="#f97316"/>
+    <text x="532" y="495" fill="#334155">안정적이나 기각</text>
+    <rect x="648" y="486" width="14" height="10" fill="#60a5fa"/>
+    <text x="668" y="495" fill="#334155">구현 probe, 기본값 아님</text>
+    <line x1="852" y1="484" x2="852" y2="498" stroke="#475569" stroke-width="3"/>
+    <text x="862" y="495" fill="#334155">representative max</text>
   </g>
 </svg>
