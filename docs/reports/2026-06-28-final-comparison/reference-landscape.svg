@@ -10,13 +10,13 @@
     <text x="262" y="110" fill="#64748b">Primary role</text>
     <text x="550" y="110" fill="#64748b">Setup attempt</text>
     <text x="760" y="110" fill="#64748b">Latency evidence</text>
-    <text x="1000" y="110" fill="#64748b">Use in zemory-sama</text>
+    <text x="1000" y="110" fill="#64748b">Use in realtime-voice-runtime</text>
     <line x1="32" y1="122" x2="1168" y2="122" stroke="#cbd5e1"/>
   </g>
 
   <g font-family="Inter, Arial, sans-serif" font-size="13">
     <rect x="24" y="136" width="1152" height="46" rx="6" fill="#ffffff" stroke="#e2e8f0"/>
-    <text x="32" y="164" fill="#111827">zemory-sama</text>
+    <text x="32" y="164" fill="#111827">realtime-voice-runtime</text>
     <text x="262" y="164" fill="#334155">CLI realtime voice core</text>
     <text x="550" y="164" fill="#166534">pass, warm-cache audit</text>
     <text x="760" y="164" fill="#166534">measured local ablations</text>
@@ -65,5 +65,5 @@
     <text x="1000" y="500" fill="#334155">TTS/local pipeline reference</text>
   </g>
 
-  <text x="32" y="540" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Conclusion: external repos inform architecture. zemory-sama latency claims come only from local numeric artifacts.</text>
+  <text x="32" y="540" font-family="Inter, Arial, sans-serif" font-size="12" fill="#475569">Conclusion: external repos inform architecture. realtime-voice-runtime latency claims come only from local numeric artifacts.</text>
 </svg>

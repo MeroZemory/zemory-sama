@@ -1,7 +1,7 @@
 [project]
-name = "zemory-sama"
+name = "realtime-voice-runtime"
 version = "0.2.0"
-description = "Low-latency realtime voice conversation AI — optimal design integrating 7 reference projects"
+description = "Low-latency realtime voice runtime for AI agents and VTuber systems"
 requires-python = ">=3.12"
 dependencies = [
     "openai[realtime]>=1.75.0",

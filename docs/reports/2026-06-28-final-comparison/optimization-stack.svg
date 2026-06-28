@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
   <title id="title">Optimization stack</title>
-  <desc id="desc">Model-external latency optimizations applied to zemory-sama and their current decisions.</desc>
+  <desc id="desc">Model-external latency optimizations applied to realtime-voice-runtime and their current decisions.</desc>
   <rect width="1200" height="460" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">What we optimize when the model is the same</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#4b5563">The model path is fixed; the measurable gains come from turn control, output budget, playback, and interruption handling.</text>

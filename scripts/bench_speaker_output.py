@@ -244,7 +244,7 @@ async def _run(args: argparse.Namespace) -> None:
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--title", default="zemory-sama speaker output benchmark")
+    parser.add_argument("--title", default="realtime-voice-runtime speaker output benchmark")
     parser.add_argument("--trials", type=int, default=24)
     parser.add_argument("--tone-ms", type=int, default=35)
     parser.add_argument("--frequency-hz", type=float, default=880.0)

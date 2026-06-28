@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check latency JSONL against zemory-sama release thresholds."""
+"""Check latency JSONL against realtime-voice-runtime release thresholds."""
 
 from __future__ import annotations
 

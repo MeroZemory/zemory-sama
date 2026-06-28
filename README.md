@@ -1,12 +1,15 @@
-# zemory-sama
+# realtime-voice-runtime
 
-Low-latency realtime voice conversation runtime for multilingual AI agents.
+Low-latency realtime voice runtime for AI agents and VTuber systems.
 
-`zemory-sama` is a Python CLI voice agent core. It focuses on the hard part of a
-voice-first assistant before UI, avatar rendering, or streaming integrations:
-capturing microphone audio, detecting turns, producing the first audible
-response quickly, handling interruptions, and keeping the conversation state
-coherent over long sessions.
+`realtime-voice-runtime` is a Python CLI voice agent core. It focuses on the
+hard part of a voice-first assistant before UI, avatar rendering, or streaming
+integrations: capturing microphone audio, detecting turns, producing the first
+audible response quickly, handling interruptions, and keeping the conversation
+state coherent over long sessions.
+
+The runtime module is still invoked as `python -m zemory`; `zemory` is the
+internal character/runtime namespace inherited from the original prototype.
 
 The default runtime uses OpenAI Realtime GA audio-in/audio-out with
 `gpt-realtime-2`, low-latency `server_vad` at a 200 ms silence window,
@@ -32,7 +35,7 @@ Steps:
 2. Run uv sync.
 3. If .env is missing, create it from .env.example without inventing API keys. Tell the user to set OPENAI_API_KEY; ELEVENLABS_API_KEY is only needed for external TTS profiles.
 4. Run uv run pytest tests/, uv run ruff check zemory tests scripts, and uv run python -m compileall zemory tests scripts.
-5. If checks pass and OPENAI_API_KEY is present, start a manual voice session with uv run python -m zemory. For a detachable session, use tmux new-session -s zemory-sama-test 'uv run python -m zemory'.
+5. If checks pass and OPENAI_API_KEY is present, start a manual voice session with uv run python -m zemory. For a detachable session, use tmux new-session -s realtime-voice-runtime-test 'uv run python -m zemory'.
 6. Report the active profile, whether Realtime reached session.configured, where logs are stored, and the stop command.
 ```
 
@@ -64,7 +67,7 @@ Final HTML + SVG report:
 The report is not a cross-repository latency leaderboard. Public voice-agent
 repos do not expose the same non-interactive fixture, model, endpoint definition,
 and output callback boundary. Cross-repo latency numbers would therefore be
-misleading. The fair latency evidence is zemory-sama's internal ablation series:
+misleading. The fair latency evidence is this repo's internal ablation series:
 which local/runtime choices reduced, failed to reduce, or destabilized response
 latency under the same harness.
 
@@ -175,13 +178,13 @@ uv run python -m zemory
 For long-running manual testing:
 
 ```bash
-tmux new-session -s zemory-sama-test 'uv run python -m zemory'
+tmux new-session -s realtime-voice-runtime-test 'uv run python -m zemory'
 ```
 
 Stop with `Ctrl+C` or:
 
 ```bash
-tmux kill-session -t zemory-sama-test
+tmux kill-session -t realtime-voice-runtime-test
 ```
 
 ## Configuration
@@ -251,7 +254,7 @@ Generate README-ready artifacts from a local runtime log:
 uv run python scripts/build_benchmark_artifacts.py \
   --log .zemory/run.log \
   --out docs/benchmarks/local-run \
-  --title "zemory-sama realtime_audio local benchmark"
+  --title "realtime-voice-runtime realtime_audio local benchmark"
 ```
 
 Run a live generated-audio benchmark against OpenAI Realtime:

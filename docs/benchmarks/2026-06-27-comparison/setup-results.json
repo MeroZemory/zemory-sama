@@ -1,6 +1,6 @@
 [
   {
-    "repo": "MeroZemory/zemory-sama",
+    "repo": "MeroZemory/realtime-voice-runtime",
     "kind": "uv sync",
     "command": "uv sync --frozen",
     "status": "pass",

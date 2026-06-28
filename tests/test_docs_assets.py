@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import re
+import tomllib
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FINAL_REPORT = ROOT / "docs" / "reports" / "2026-06-28-final-comparison"
+REPO_NAME = "realtime-voice-runtime"
 
 
 class _ImageParser(HTMLParser):
@@ -40,6 +42,16 @@ def test_root_readme_does_not_embed_dense_benchmark_svgs() -> None:
 
     assert embedded_benchmark_svgs == []
     assert "docs/reports/2026-06-28-final-comparison" in readme
+
+
+def test_public_repo_name_is_consistent() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert readme.startswith(f"# {REPO_NAME}\n")
+    assert pyproject["project"]["name"] == REPO_NAME
+    old_url = "github.com/MeroZemory/" + "zemory" + "-sama"
+    assert old_url not in readme
 
 
 def test_final_report_image_sources_exist_and_are_valid_svg() -> None:

@@ -535,7 +535,7 @@ def _source_note(
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--title", default="zemory-sama live realtime audio benchmark")
+    parser.add_argument("--title", default="realtime-voice-runtime live realtime audio benchmark")
     parser.add_argument(
         "--eagerness",
         choices=["low", "medium", "high", "auto"],

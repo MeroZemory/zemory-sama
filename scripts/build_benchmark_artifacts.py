@@ -20,7 +20,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log", type=Path, default=Path(".zemory/run.log"))
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--title", default="zemory-sama manual realtime audio benchmark")
+    parser.add_argument("--title", default="realtime-voice-runtime manual realtime audio benchmark")
     parser.add_argument(
         "--source-note",
         default=(
