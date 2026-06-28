@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="rl-title rl-desc">
-  <title id="rl-title">Response length benchmark</title>
-  <desc id="rl-desc">Comparison between old 1-2 sentence response length and one short sentence default. Both device playback boundary, 06-28, n8.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="response_length_sweep_title response_length_sweep_desc">
+  <title id="response_length_sweep_title">Response length benchmark</title>
+  <desc id="response_length_sweep_desc">Comparison between old 1-2 sentence response length and one short sentence default. Both device playback boundary, 06-28, n8.</desc>
   <rect width="1200" height="340" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Response length cap: p50 mixed, representative tail better</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">8 live fixtures each, server_vad 200 ms, 20 ms chunks, first local speaker playback callback (device 경계).</text>

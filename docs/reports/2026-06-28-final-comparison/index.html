@@ -233,7 +233,7 @@
     <div class="meta">
       <span class="pill">작성일: 2026-06-28 KST</span>
       <span class="pill">벤치 기준: 2026-06-27 ~ 2026-06-28 local artifacts</span>
-      <span class="pill">검증: 109 tests, coverage 87.42%</span>
+      <span class="pill">검증: 116 tests, coverage 87.42%</span>
       <span class="pill">보고서 범위: HTML + SVG</span>
     </div>
   </header>
@@ -468,13 +468,13 @@
     </table>
     <p class="note">표 읽는 법: <strong>측정 경계가 다르면 p50을 가로로 직접 비교하지 않는다.</strong> device playback(06-28)과 API first-audio(06-27)는 약 6.5 ms(api-to-playback p50) 차이로 사실상 동급이지만, commit→first-audio(controlled say)는 VAD 대기(약 500 ms)를 제외한 lower-bound다. 채택/기각 결정은 모두 <strong>동일 날짜·동일 경계 쌍</strong>에서만 도출했다(short vs old length 둘 다 06-28 device, 200 vs 195 vs 193 셋 다 06-27 API). <span class="lowpower">*</span> 표시는 n&lt;4 행으로, p50가 단일 표본 수준이고 n≥4에서만 도는 outlier 분리가 적용되지 않아 representative max == raw max다.</p>
 
-    <figure>
+    <figure aria-describedby="latency-comparison-caption">
       <img src="latency-comparison.svg" alt="run별 p50 막대와 representative max 마커. 측정 경계가 섞여 있어 가로 직접 비교는 주의. 195 ms는 p50는 낮지만 tail이 길다.">
-      <figcaption>p50은 bar, representative max는 marker다. 195 ms는 p50만 보면 매력적이지만 tail이 좋지 않다.</figcaption>
+      <figcaption id="latency-comparison-caption">p50은 bar, representative max는 marker다. 195 ms는 p50만 보면 매력적이지만 tail이 좋지 않다.</figcaption>
     </figure>
-    <figure>
+    <figure aria-describedby="outlier-policy-caption">
       <img src="outlier-policy.svg" alt="막대는 representative max, 빨간 선은 raw max(진단용). manual 7087 ms, server_vad 5001 ms는 outlier로 분리됐다.">
-      <figcaption>raw max는 보존한다. 다만 severe outlier가 headline max를 대표하지 않게 representative max를 별도 산출한다.</figcaption>
+      <figcaption id="outlier-policy-caption">raw max는 보존한다. 다만 severe outlier가 headline max를 대표하지 않게 representative max를 별도 산출한다.</figcaption>
     </figure>
 
     <h3>Input chunk sweep</h3>
@@ -510,9 +510,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="input-chunk-sweep-caption">
       <img src="input-chunk-sweep.svg" alt="입력 chunk 20 ms vs 10 ms. 10 ms는 n8에서 p50과 representative tail이 모두 악화되어 기각, 20 ms 유지.">
-      <figcaption>10 ms input chunk did not buy lower VAD latency in the n8 live fixture; it increased the representative tail.</figcaption>
+      <figcaption id="input-chunk-sweep-caption">10 ms input chunk did not buy lower VAD latency in the n8 live fixture; it increased the representative tail.</figcaption>
     </figure>
 
     <h3>Speaker output callback check</h3>
@@ -542,9 +542,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="speaker-output-callback-caption">
       <img src="speaker-output-callback.svg" alt="로컬 스피커 queue→첫 playback callback p50 7.4 ms, representative max 8.3 ms로 10 ms 콜백 budget 안에 든다.">
-      <figcaption>스피커 출력 microbench는 API/network latency를 제외하고 로컬 callback 대기만 측정한다.</figcaption>
+      <figcaption id="speaker-output-callback-caption">스피커 출력 microbench는 API/network latency를 제외하고 로컬 callback 대기만 측정한다.</figcaption>
     </figure>
 
     <h3>Full API-to-device playback rerun</h3>
@@ -574,9 +574,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="live-device-playback-caption">
       <img src="live-device-playback.svg" alt="full API-to-device rerun. device p50 1275 ms, API first-audio 1268 ms, API→playback은 6.5 ms로 playback이 병목이 아니다.">
-      <figcaption>full rerun은 API/network/model/VAD와 local speaker callback을 같은 측정선에 둔다.</figcaption>
+      <figcaption id="live-device-playback-caption">full rerun은 API/network/model/VAD와 local speaker callback을 같은 측정선에 둔다.</figcaption>
     </figure>
 
     <h3>Response length cap</h3>
@@ -615,9 +615,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="response-length-sweep-caption">
       <img src="response-length-sweep.svg" alt="old 1-2문장 vs one short sentence. p50는 short가 조금 높지만 representative tail이 1612.7→1498.7 ms로 낮아진다.">
-      <figcaption>짧은 응답 길이는 first-audio p50만으로는 혼합 결과지만, representative tail과 실제 spoken duration을 줄인다.</figcaption>
+      <figcaption id="response-length-sweep-caption">짧은 응답 길이는 first-audio p50만으로는 혼합 결과지만, representative tail과 실제 spoken duration을 줄인다.</figcaption>
     </figure>
 
     <h3>Forced commit upper bound</h3>
@@ -645,9 +645,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="forced-commit-upper-bound-caption">
       <img src="forced-commit-upper-bound.svg" alt="forced commit(정확한 endpoint 가정) p50 957 ms로 server_vad 1275 ms 대비 318 ms 빠른 상한선. 기본값 아님.">
-      <figcaption>forced commit removes the server VAD wait, but correctness depends on endpoint prediction quality.</figcaption>
+      <figcaption id="forced-commit-upper-bound-caption">forced commit removes the server VAD wait, but correctness depends on endpoint prediction quality.</figcaption>
     </figure>
 
     <h3>Local endpoint commit tuning</h3>
@@ -709,9 +709,9 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="local-endpoint-rejection-caption">
       <img src="local-endpoint-rejection.svg" alt="로컬 endpoint 후보들. miss10은 early cutoff, 나머지는 안정적이나 server_vad보다 느려 모두 기본값으로 기각.">
-      <figcaption>로컬 endpoint commit은 기술적으로 가능하고 튜닝으로 빨라졌지만, 안정 후보는 아직 server_vad 기본값보다 느리다.</figcaption>
+      <figcaption id="local-endpoint-rejection-caption">로컬 endpoint commit은 기술적으로 가능하고 튜닝으로 빨라졌지만, 안정 후보는 아직 server_vad 기본값보다 느리다.</figcaption>
     </figure>
   </section>
 
@@ -739,15 +739,15 @@
         </tr>
         <tr>
           <td><a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber">Open-LLM-VTuber</a></td>
-          <td class="num">11,943</td>
+          <td class="num">11,942</td>
           <td>updated 2026-06-27, pushed 2026-05-15</td>
           <td>VTuber app architecture, interruption/provider boundary 참고.</td>
           <td>공통 fixture 없음. interruption 패턴만 참고.</td>
         </tr>
         <tr>
           <td><a href="https://github.com/livekit/agents">LiveKit Agents</a></td>
-          <td class="num">11,153</td>
-          <td>updated 2026-06-27, pushed 2026-06-27</td>
+          <td class="num">&mdash;</td>
+          <td>source review only; no stored GitHub snapshot</td>
           <td>Realtime voice agent framework source reference. OpenAI plugin, turn detection default 확인.</td>
           <td>source-level reference. 직접 benchmark 대상 아님.</td>
         </tr>
@@ -846,17 +846,17 @@
         </tr>
       </tbody>
     </table>
-    <figure>
+    <figure aria-describedby="reference-landscape-caption">
       <img src="reference-landscape.svg" alt="레퍼런스 repo를 역할·setup·latency 근거 유무로 비교한 매트릭스. 속도 순위가 아니다.">
-      <figcaption>외부 repo의 stars와 setup은 context다. 속도 순위로 해석하면 안 된다.</figcaption>
+      <figcaption id="reference-landscape-caption">외부 repo의 stars와 setup은 context다. 속도 순위로 해석하면 안 된다.</figcaption>
     </figure>
   </section>
 
   <section id="optimization-stack" aria-labelledby="optimization-stack-h">
     <h2 id="optimization-stack-h">5. 적용된 최적화 스택</h2>
-    <figure>
+    <figure aria-describedby="optimization-stack-caption">
       <img src="optimization-stack.svg" alt="모델 외부 최적화 레이어(audio-native, turn-end, output budget, playback, interrupt)와 기본 채택되지 않은 항목 박스 다이어그램.">
-      <figcaption>최적화는 모델, turn end, 측정 정책, playback, device I/O를 분리해서 적용했다.</figcaption>
+      <figcaption id="optimization-stack-caption">최적화는 모델, turn end, 측정 정책, playback, device I/O를 분리해서 적용했다.</figcaption>
     </figure>
     <table>
       <caption>표 10. 적용된 최적화 스택의 현재 상태와 근거.</caption>

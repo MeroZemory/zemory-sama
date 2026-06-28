@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 import xml.dom.minidom
+import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
 
@@ -18,6 +19,8 @@ import pytest
 
 REPORT_DIR = Path(__file__).resolve().parents[1] / "docs" / "reports" / "2026-06-28-final-comparison"
 INDEX = REPORT_DIR / "index.html"
+REPO_METADATA = Path(__file__).resolve().parents[1] / "docs" / "benchmarks" / "2026-06-27-comparison" / "repo-metadata.json"
+SETUP_RESULTS = Path(__file__).resolve().parents[1] / "docs" / "benchmarks" / "2026-06-27-comparison" / "setup-results-final.json"
 
 
 class _Table:
@@ -179,6 +182,27 @@ def _summary_numbers(summary: dict) -> list[float]:
     return [float(v) for v in summary.values() if isinstance(v, (int, float))]
 
 
+def test_headline_metric_cards_match_artifacts() -> None:
+    """Header metric cards are headline claims, so they must be artifact-backed too."""
+    html = _html()
+    expected = {
+        "1261.3 ms": ("../../benchmarks/2026-06-28-short-default-device-playback-n8/", "turn_p50_ms"),
+        "957.0 ms": ("../../benchmarks/2026-06-28-forced-commit-device-playback-n8/", "turn_p50_ms"),
+        "1654.2 ms": (
+            "../../benchmarks/2026-06-28-local-endpoint-miss14-device-playback-n8/",
+            "turn_p50_ms",
+        ),
+        "5.3 ms": (
+            "../../benchmarks/2026-06-28-short-default-device-playback-n8/",
+            "api_to_playback_p50_ms",
+        ),
+    }
+
+    for label, (href, key) in expected.items():
+        assert f"<strong>{label}</strong>" in html
+        assert float(label.removesuffix(" ms")) == pytest.approx(_summary_for(href)[key], abs=0.05)
+
+
 def test_all_benchmark_linked_rows_quote_real_numbers() -> None:
     """Every 'X ms' value in a benchmark-linked row must exist in that run's artifact.
 
@@ -216,11 +240,76 @@ def test_low_power_rows_are_flagged() -> None:
             )
 
 
+def test_reference_repo_table_matches_metadata_snapshot() -> None:
+    """External repo stars and freshness labels must match the captured snapshot."""
+    table = next(t for t in _tables() if t.caption.strip().startswith("표 8."))
+    cols = {name: i for i, name in enumerate(table.headers)}
+    metadata = {item["url"]: item for item in json.loads(REPO_METADATA.read_text(encoding="utf-8"))}
+
+    checked = 0
+    for row in table.rows:
+        href = row["href"]
+        if href not in metadata:
+            continue
+        item = metadata[href]
+        cells = row["cells"]
+        stars = int(cells[cols["Stars"]].replace(",", ""))
+        updated = item["updated_at"][:10]
+        pushed = item["pushed_at"][:10]
+
+        assert stars == item["stars"], f"{href}: stars drifted from repo-metadata.json"
+        assert f"updated {updated}" in cells[cols["Freshness snapshot"]]
+        assert f"pushed {pushed}" in cells[cols["Freshness snapshot"]]
+        checked += 1
+
+    assert checked >= 6, f"expected to verify most external repos, got {checked}"
+
+
+def test_unsnapshotted_reference_rows_do_not_claim_repo_metrics() -> None:
+    table = next(t for t in _tables() if t.caption.strip().startswith("표 8."))
+    cols = {name: i for i, name in enumerate(table.headers)}
+    metadata = {item["url"] for item in json.loads(REPO_METADATA.read_text(encoding="utf-8"))}
+
+    checked = 0
+    for row in table.rows:
+        href = row["href"]
+        if not href or not href.startswith("https://github.com/") or href in metadata:
+            continue
+        stars_cell = row["cells"][cols["Stars"]]
+        freshness_cell = row["cells"][cols["Freshness snapshot"]]
+
+        assert not re.search(r"\d", stars_cell), f"{href}: unsnapshotted row claims stars"
+        assert "source review" in freshness_cell, f"{href}: missing source-review qualifier"
+        checked += 1
+
+    assert checked >= 1, "expected at least one source-review-only reference row"
+
+
+def test_setup_table_matches_final_setup_results() -> None:
+    """Setup duration is diagnostic evidence, so it must match the stored run."""
+    table = next(t for t in _tables() if t.caption.strip().startswith("표 9."))
+    cols = {name: i for i, name in enumerate(table.headers)}
+    results = {item["repo"]: item for item in json.loads(SETUP_RESULTS.read_text(encoding="utf-8"))}
+
+    for row in table.rows:
+        repo = row["cells"][cols["Repository"]]
+        assert repo in results, f"{repo}: setup row has no final setup artifact"
+        item = results[repo]
+
+        assert row["cells"][cols["Status"]] == item["status"]
+        assert _first_number(row["cells"][cols["Duration"]]) == pytest.approx(
+            item["duration_s"], abs=0.05
+        )
+
+    assert len(table.rows) == len(results)
+
+
 # --- Fairness: header verification pill matches the real metrics --------------
 
 
 def test_coverage_pill_matches_real_coverage() -> None:
     html = _html()
+    assert "116 tests" in html
     m = re.search(r"coverage (\d+\.\d+)%", html)
     assert m, "coverage pill not found"
     # 80% floor is enforced in pyproject; the pill must at least be plausible.
@@ -259,6 +348,21 @@ def test_every_table_header_uses_scope() -> None:
     assert "<th>" not in html, "found a <th> without scope/attributes"
 
 
+def test_figures_are_bound_to_their_captions() -> None:
+    """Figure captions should be programmatically associated with each chart image."""
+    html = _html()
+    figures = re.findall(r"<figure\b([^>]*)>(.*?)</figure>", html, flags=re.S)
+    assert figures, "expected at least one report figure"
+
+    ids = set(re.findall(r'\sid="([\w-]+)"', html))
+    for attrs, body in figures:
+        assert "<img " in body, f"figure without image: {body}"
+        assert "<figcaption" in body, f"figure without caption: {body}"
+        m = re.search(r'aria-describedby="([\w-]+)"', attrs)
+        assert m, f"figure missing aria-describedby: {body}"
+        assert m.group(1) in ids, f"figure describes missing caption id: {m.group(1)}"
+
+
 # --- Visualization: SVGs parse and are wired into the report -----------------
 
 
@@ -281,3 +385,39 @@ def test_every_embedded_image_has_alt_text() -> None:
         m = re.search(r'alt="([^"]*)"', tag)
         assert m and m.group(1).strip(), f"img without meaningful alt: {tag}"
         assert not m.group(1).strip().endswith("SVG"), f"alt is a generic placeholder: {tag}"
+
+
+def test_svg_accessible_labels_use_file_scoped_ids() -> None:
+    """SVG title/desc IDs should be unique enough to remain safe if inlined."""
+    for svg in REPORT_DIR.glob("*.svg"):
+        root = ET.parse(svg).getroot()
+        ns = {"svg": "http://www.w3.org/2000/svg"}
+        assert root.attrib.get("role") == "img", svg.name
+
+        labelledby = root.attrib.get("aria-labelledby", "")
+        label_ids = labelledby.split()
+        assert len(label_ids) == 2, f"{svg.name}: expected title + desc aria-labelledby"
+
+        ids = {el.attrib["id"] for el in root.iter() if "id" in el.attrib}
+        assert set(label_ids).issubset(ids), f"{svg.name}: aria-labelledby points to missing ids"
+
+        prefix = svg.stem.replace("-", "_")
+        assert label_ids == [f"{prefix}_title", f"{prefix}_desc"], (
+            f"{svg.name}: label ids should be file-scoped, got {label_ids}"
+        )
+
+        title = root.find("svg:title", ns)
+        desc = root.find("svg:desc", ns)
+        assert title is not None and title.attrib.get("id") == f"{prefix}_title", svg.name
+        assert desc is not None and desc.attrib.get("id") == f"{prefix}_desc", svg.name
+        assert (title.text or "").strip(), svg.name
+        assert (desc.text or "").strip(), svg.name
+
+
+def test_reference_landscape_svg_names_every_reference_repo() -> None:
+    table = next(t for t in _tables() if t.caption.strip().startswith("표 8."))
+    repos = [row["cells"][0] for row in table.rows]
+    svg_text = (REPORT_DIR / "reference-landscape.svg").read_text(encoding="utf-8")
+
+    for repo in repos:
+        assert repo in svg_text, f"reference-landscape.svg omits {repo!r}"

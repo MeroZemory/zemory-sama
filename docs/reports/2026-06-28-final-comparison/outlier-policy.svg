@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
-  <title id="title">Extreme outlier handling</title>
-  <desc id="desc">Raw max values are preserved as diagnostics while representative max values are used for headline comparison.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="outlier_policy_title outlier_policy_desc">
+  <title id="outlier_policy_title">Extreme outlier handling</title>
+  <desc id="outlier_policy_desc">Raw max values are preserved as diagnostics while representative max values are used for headline comparison.</desc>
   <rect width="1200" height="390" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Max policy: retain raw max, compare representative max</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">Extreme network/API stalls are not hidden; they are separated from the normal latency envelope.</text>

@@ -234,7 +234,7 @@ uv run python -m compileall zemory tests scripts
 
 Current local verification target:
 
-- 95 tests passing.
+- 116 tests passing.
 - 80% coverage gate.
 - Core coverage currently above 87%.
 
@@ -304,7 +304,7 @@ docs/
 The current design intentionally chooses a simple Realtime-first path:
 
 - audio-native output before external TTS by default
-- server-side semantic turn detection before local heuristics
+- server-side turn detection before local heuristics
 - deadline-bound context retrieval before blocking RAG
 - explicit profiles before runtime magic
 - no legacy preview Realtime path

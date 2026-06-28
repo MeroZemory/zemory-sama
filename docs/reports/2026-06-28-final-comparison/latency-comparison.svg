@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="540" viewBox="0 0 1200 540" role="img" aria-labelledby="lc-title lc-desc">
-  <title id="lc-title">realtime-voice-runtime internal latency ablation</title>
-  <desc id="lc-desc">Internal benchmark runs comparing p50 (bars) and representative max (markers). Bars use different measurement boundaries (device playback, API first-audio, commit) labeled per row, so absolute p50 values are not directly comparable across boundaries. This is not a cross-repository speed ranking.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="540" viewBox="0 0 1200 540" role="img" aria-labelledby="latency_comparison_title latency_comparison_desc">
+  <title id="latency_comparison_title">realtime-voice-runtime internal latency ablation</title>
+  <desc id="latency_comparison_desc">Internal benchmark runs comparing p50 (bars) and representative max (markers). Bars use different measurement boundaries (device playback, API first-audio, commit) labeled per row, so absolute p50 values are not directly comparable across boundaries. This is not a cross-repository speed ranking.</desc>
   <rect width="1200" height="540" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Internal latency ablation, not a cross-repo leaderboard</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">막대=p50, 얇은 마커=representative max. 막대마다 측정 경계가 달라(행 라벨의 경계 태그) p50 가로 직접 비교는 주의.</text>

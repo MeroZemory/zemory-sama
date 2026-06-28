@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="370" viewBox="0 0 1200 370" role="img" aria-labelledby="title desc">
-  <title id="title">Speaker output callback benchmark</title>
-  <desc id="desc">Local SpeakerStream queue to first playback callback latency with a 10 ms output callback block.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="370" viewBox="0 0 1200 370" role="img" aria-labelledby="speaker_output_callback_title speaker_output_callback_desc">
+  <title id="speaker_output_callback_title">Speaker output callback benchmark</title>
+  <desc id="speaker_output_callback_desc">Local SpeakerStream queue to first playback callback latency with a 10 ms output callback block.</desc>
   <rect width="1200" height="370" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Speaker output callback: 10 ms block verified</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">24 local samples. Metric is queue insertion to first output callback that consumes non-zero PCM.</text>

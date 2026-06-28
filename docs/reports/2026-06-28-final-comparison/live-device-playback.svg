@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
-  <title id="title">Live API-to-device playback benchmark</title>
-  <desc id="desc">Realtime live fixture with first local speaker playback callback timing.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="live_device_playback_title live_device_playback_desc">
+  <title id="live_device_playback_title">Live API-to-device playback benchmark</title>
+  <desc id="live_device_playback_desc">Realtime live fixture with first local speaker playback callback timing.</desc>
   <rect width="1200" height="390" fill="#ffffff"/>
   <text x="32" y="44" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700" fill="#111827">Full API-to-device rerun: playback is not the bottleneck</text>
   <text x="32" y="70" font-family="Inter, Arial, sans-serif" font-size="14" fill="#475569">8 macOS say fixtures, server_vad 200 ms, 20 ms input chunk, play_output=True.</text>
