@@ -4,8 +4,9 @@ Phase-1 (`zemory/`) used a single `speaking: asyncio.Event` gate.
 Phase-2 (`zemory_vad/`) introduced `Phase.{LISTENING,ACTIVE,RESPONDING}`.
 
 This module consolidates both under one enum protected by an ``asyncio.Lock``
-so transitions are atomic. Mic muting is derived from state
-(``mute_mic = phase != ACTIVE``), eliminating the separate ``speaking`` Event.
+so transitions are atomic. Actual microphone forwarding is profile-specific:
+LISTENING audio must reach turn detection, while RESPONDING audio is forwarded
+only when the selected Realtime profile enables barge-in.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ class Phase(Enum):
 
 
 class StateMachine:
-    """Thread-safe holder for the current Phase.
+    """Task-safe holder for the current Phase.
 
     Transitions are mediated by :meth:`transition` which acquires a lock so
     two tasks cannot race. A set of listeners can be notified on each
@@ -39,11 +40,6 @@ class StateMachine:
     @property
     def phase(self) -> Phase:
         return self._phase
-
-    @property
-    def mute_mic(self) -> bool:
-        """Derived: mute the outbound mic stream unless the user is actively speaking."""
-        return self._phase != Phase.ACTIVE
 
     def add_listener(self, cb: Callable[[Phase, Phase], None]) -> None:
         self._listeners.append(cb)

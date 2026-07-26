@@ -24,6 +24,10 @@ class Injection:
     priority: int
     text: str
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Memory/tool output is user-controlled or externally sourced data by
+    # default. Only static, code-curated instructions may opt into system
+    # authority explicitly.
+    trust: Literal["untrusted_data", "trusted_instruction"] = "untrusted_data"
 
 
 @runtime_checkable
@@ -54,7 +58,13 @@ class LLMProvider(Protocol):
     async def open_session(self) -> None:
         ...
 
-    async def send_user_text(self, text: str, injections: list[Injection]) -> None:
+    async def send_user_text(
+        self,
+        text: str,
+        injections: list[Injection],
+        *,
+        generation_id: int | None = None,
+    ) -> None:
         """Push user text + optional context injections.
 
         In the Realtime profile with server_vad, audio is sent continuously
@@ -65,13 +75,24 @@ class LLMProvider(Protocol):
     async def push_audio(self, pcm_bytes: bytes) -> None:
         """Stream mic audio to the LLM (Realtime profile only; else no-op)."""
 
-    async def cancel_current(self) -> None:
+    async def cancel_current(self, response_id: str | None = None) -> None:
         """Abort the in-flight response (barge-in)."""
 
-    async def commit_input_audio_buffer(self) -> None:
+    async def commit_input_audio_buffer(
+        self,
+        *,
+        generation_id: int | None = None,
+    ) -> None:
         """Commit streamed audio for a manual Realtime turn."""
 
-    async def trigger_response(self) -> None:
+    async def clear_input_buffer(
+        self,
+        *,
+        generation_id: int | None = None,
+    ) -> None:
+        """Clear a failed manual Realtime input generation."""
+
+    async def trigger_response(self, *, generation_id: int | None = None) -> None:
         """Request a response after a manual Realtime commit."""
 
     async def events(self) -> AsyncIterator[dict]:
@@ -83,7 +104,8 @@ class LLMProvider(Protocol):
             {"type": "input.speech_started"}        # Realtime only
             {"type": "input.speech_stopped"}        # Realtime only
             {"type": "input.transcript", "text": str}
-            {"type": "error", "error": Any}
+            {"type": "error", "error_code": str | None,
+             "error_type": str | None}
         """
         if False:
             yield {}

@@ -1,4 +1,4 @@
-"""InterruptBus: abort chain ordering, debounce, timing budget."""
+"""InterruptBus: abort ordering, duplicate suppression, and timing budget."""
 
 from __future__ import annotations
 
@@ -54,7 +54,9 @@ async def test_abort_chain_runs_in_order_and_under_budget():
     assert mgr.aborted is True        # [2] tts aborted
     assert llm.cancel_called == 1     # [3] llm cancel invoked
     assert sm.phase == Phase.ACTIVE   # [5] state transitioned back to ACTIVE
-    # [6] (clear_input_buffer on Realtime) — not FakeLLM, so isinstance guard skips
+    # speech_started means the new utterance is already in the server input
+    # buffer. Clearing here would destroy its prefix.
+    assert llm.clear_called == 0
     # Budget: design §4 targets p95 ≤ 150 ms. Under pytest-asyncio scheduling
     # overhead we allow 200 ms as the CI floor.
     assert elapsed_ms < 200, f"abort chain took {elapsed_ms:.1f} ms"
@@ -63,7 +65,93 @@ async def test_abort_chain_runs_in_order_and_under_budget():
 
 
 @pytest.mark.asyncio
-async def test_debounce_rejects_rapid_double_trigger():
+async def test_interrupt_truncates_output_without_blocking_local_state() -> None:
+    class SlowLLM(FakeLLM):
+        async def cancel_current(self) -> None:
+            await asyncio.sleep(0.02)
+            await super().cancel_current()
+
+    sm = StateMachine()
+    await sm.transition(Phase.RESPONDING)
+    llm = SlowLLM()
+    truncated: list[Phase] = []
+
+    async def truncate_played_output() -> None:
+        truncated.append(sm.phase)
+
+    bus = InterruptBus(
+        sm,
+        FakeSpeaker(),
+        on_output_interrupted=truncate_played_output,
+    )
+    bus.bind(None, llm)
+
+    assert await bus.trigger("user_barge_in") is True
+    assert sm.phase == Phase.ACTIVE
+    assert truncated == [Phase.ACTIVE]
+    assert llm.cancel_called == 1
+    assert llm.clear_called == 0
+    await bus.aclose()
+
+
+@pytest.mark.asyncio
+async def test_slow_cancel_cannot_skip_captured_output_truncation(monkeypatch) -> None:
+    from zemory.pipeline import interrupt_bus as interrupt_module
+
+    monkeypatch.setattr(interrupt_module, "_REMOTE_SYNC_TIMEOUT_S", 0.005)
+    monkeypatch.setattr(interrupt_module, "_REMOTE_ACTION_TIMEOUT_S", 0.01)
+    monkeypatch.setattr(interrupt_module, "_CANCEL_ACTION_TIMEOUT_S", 0.01)
+
+    class HangingCancelLLM(FakeLLM):
+        def __init__(self) -> None:
+            super().__init__()
+            self.cancelled_by_timeout = asyncio.Event()
+
+        async def cancel_current(self, response_id: str | None = None) -> None:
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                self.cancelled_by_timeout.set()
+                raise
+
+    sm = StateMachine()
+    await sm.transition(Phase.RESPONDING)
+    prepared_in: list[Phase] = []
+    synchronized_in: list[Phase] = []
+
+    def prepare_truncation():
+        prepared_in.append(sm.phase)
+
+        async def synchronize() -> None:
+            synchronized_in.append(sm.phase)
+
+        return synchronize()
+
+    bus = InterruptBus(
+        sm,
+        FakeSpeaker(),
+        on_output_interrupted=prepare_truncation,
+    )
+    llm = HangingCancelLLM()
+    bus.bind(None, llm)
+
+    started = time.monotonic()
+    assert await bus.trigger("slow_remote") is True
+    assert (time.monotonic() - started) * 1000 < 50
+    assert prepared_in == [Phase.RESPONDING]
+    assert sm.phase == Phase.ACTIVE
+
+    for _ in range(30):
+        if synchronized_in:
+            break
+        await asyncio.sleep(0.002)
+    assert synchronized_in == [Phase.ACTIVE]
+    assert llm.cancelled_by_timeout.is_set()
+    await bus.aclose()
+
+
+@pytest.mark.asyncio
+async def test_phase_transition_rejects_concurrent_duplicate_trigger():
     sm = StateMachine()
     await sm.transition(Phase.ACTIVE)
     await sm.transition(Phase.RESPONDING)
@@ -73,15 +161,36 @@ async def test_debounce_rejects_rapid_double_trigger():
     bus = InterruptBus(sm, FakeSpeaker())
     bus.bind(mgr, FakeLLM())
 
-    fired_1 = await bus.trigger("first")
-    # Re-enter RESPONDING to test the debounce (trigger moved us to ACTIVE).
-    await sm.transition(Phase.RESPONDING)
-    fired_2 = await bus.trigger("second")
+    fired = await asyncio.gather(
+        bus.trigger("duplicate-a"),
+        bus.trigger("duplicate-b"),
+    )
 
-    assert fired_1 is True
-    assert fired_2 is False   # debounced
+    assert sorted(fired) == [False, True]
+    assert sm.phase == Phase.ACTIVE
 
     await mgr.stop()
+
+
+@pytest.mark.asyncio
+async def test_rapid_interrupt_in_new_response_generation_is_not_suppressed():
+    sm = StateMachine()
+    await sm.transition(Phase.RESPONDING)
+    speaker = FakeSpeaker()
+    llm = FakeLLM()
+    bus = InterruptBus(sm, speaker)
+    bus.bind(None, llm)
+
+    assert await bus.trigger("generation-one") is True
+    # A short user turn can legitimately put the next generation into
+    # RESPONDING within the old 250 ms debounce window.
+    await sm.transition(Phase.RESPONDING)
+    assert await bus.trigger("generation-two") is True
+
+    assert sm.phase == Phase.ACTIVE
+    assert speaker.cleared == 2
+    assert llm.cancel_called == 2
+    await bus.aclose()
 
 
 @pytest.mark.asyncio

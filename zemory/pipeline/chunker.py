@@ -13,6 +13,7 @@ from __future__ import annotations
 _HARD_BOUNDARIES = frozenset(".?!。？！\n")
 _SOFT_BOUNDARIES = frozenset(",:;、，")
 _SOFT_MIN_LEN = 40  # chars
+_HARD_MAX_LEN = 240
 
 
 class SentenceChunker:
@@ -49,6 +50,12 @@ class SentenceChunker:
             if ch in _SOFT_BOUNDARIES and (i + 1) >= _SOFT_MIN_LEN:
                 # Only soft-split when we've accumulated enough context.
                 return i
+        if len(self._buf) >= _HARD_MAX_LEN:
+            # A model can ignore the requested response length or emit a very
+            # long punctuation-free token stream. Bound both memory and TTS
+            # start latency, preferring a nearby word boundary when possible.
+            boundary = self._buf.rfind(" ", _SOFT_MIN_LEN, _HARD_MAX_LEN)
+            return boundary if boundary >= 0 else _HARD_MAX_LEN - 1
         return -1
 
     def flush(self) -> str | None:

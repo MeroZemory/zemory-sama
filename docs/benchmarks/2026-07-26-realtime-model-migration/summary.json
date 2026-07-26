@@ -1,0 +1,74 @@
+{
+  "schema_version": "zemory.model-migration-benchmark.v1",
+  "generated_at": "2026-07-26",
+  "runtime_version": "0.2.0",
+  "openai_sdk_version": "2.31.0",
+  "percentile_method": "nearest_rank (ceil(p/100*n), 1-indexed; at n=8 p95 equals max)",
+  "configuration_capture": {
+    "expanded_config_retained": false,
+    "max_output_tokens": null,
+    "limitation": "The producer hashed the expanded configuration, but the historical public-event sanitizer dropped it. These cohorts predate the 512-token cap."
+  },
+  "max_output_smoke": {
+    "artifact": "max-output-smoke/",
+    "config_hash": "21a2e4f2f47ceef9d88cf70f9651da21d781e35c34cc4aef194dafe54ed8ec3a",
+    "expanded_config_retained": false,
+    "fixture": "ko_short",
+    "max_output_tokens_claimed": 512,
+    "model": "gpt-realtime-2.1",
+    "observed_api_first_audio_ms": 687.8,
+    "release_gate_evidence": false,
+    "run_id": "f7959d71d418443196b153df717df88a",
+    "sample_count": 1
+  },
+  "cohorts": [
+    {
+      "name": "gpt-realtime-2.1 app-owned server VAD",
+      "run_id": "4d926491d4094fc887e7121885f15876",
+      "config_hash": "482ca4e53dd17e18399c1726ce21f9cf6facd0e7efd606d77afa81253a043f63",
+      "model": "gpt-realtime-2.1",
+      "metric_target": "api_first_audio",
+      "turn_detection": "server_vad",
+      "server_vad_silence_ms": 200,
+      "play_output": false,
+      "sample_count": 8,
+      "invalid_count": 0,
+      "early_cutoff_count": 0,
+      "total_ms": [1850.1, 1557.2, 1574.5, 1865.7, 2013.7, 1555.2, 1547.7, 2009.6],
+      "first_audio_after_speech_stopped_ms": [1222.3, 1083.1, 1099.3, 1377.3, 1387.8, 1064.7, 1099.7, 1545.7],
+      "vad_wait_ms": [627.8, 474.1, 475.2, 488.4, 625.9, 490.5, 448.0, 463.9],
+      "p50_ms": 1574.5,
+      "p95_ms": 2013.7
+    },
+    {
+      "name": "gpt-realtime-2.1 forced commit",
+      "run_id": "13c1014101374adaad2c77ee701f067f",
+      "config_hash": "f4438aa0ab8f1f7d31e7a984c8ac8223337c754d8a3077ac75b8cab467c6ae1f",
+      "model": "gpt-realtime-2.1",
+      "metric_target": "device_playback",
+      "turn_detection": "none",
+      "play_output": true,
+      "sample_count": 8,
+      "invalid_count": 0,
+      "early_cutoff_count": 0,
+      "total_ms": [1121.1, 683.4, 748.9, 988.3, 883.2, 748.4, 741.5, 1307.4],
+      "p50_ms": 748.9,
+      "p95_ms": 1307.4
+    },
+    {
+      "name": "gpt-realtime-2.1-mini forced commit",
+      "run_id": "db75df10c38c43abb681a32dc6ad4483",
+      "config_hash": "3a815751bd2ac094872e3c738bcc56b2e2c674e78ee11ba32436bcc06ec8588b",
+      "model": "gpt-realtime-2.1-mini",
+      "metric_target": "device_playback",
+      "turn_detection": "none",
+      "play_output": true,
+      "sample_count": 8,
+      "invalid_count": 0,
+      "early_cutoff_count": 0,
+      "total_ms": [1024.4, 732.0, 809.3, 1161.2, 946.9, 1101.1, 955.9, 746.0],
+      "p50_ms": 946.9,
+      "p95_ms": 1161.2
+    }
+  ]
+}

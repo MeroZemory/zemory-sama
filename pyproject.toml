@@ -4,22 +4,17 @@ version = "0.2.0"
 description = "Low-latency realtime voice runtime for AI agents and VTuber systems"
 requires-python = ">=3.12"
 dependencies = [
-    "openai[realtime]>=1.75.0",
+    "openai[realtime]>=2.31.0,<3",
     "sounddevice>=0.5.0",
     "numpy>=2.0.0",
     "python-dotenv>=1.0.0",
+    "pydantic>=2.7",
     "pydantic-settings>=2.4",
     "httpx>=0.27",
     "structlog>=24.1",
     "onnxruntime>=1.18.0",
     "silero-vad>=6.2.1",
-    "duckduckgo-search>=7.0.0",
 ]
-
-[project.optional-dependencies]
-observability = ["aiohttp>=3.9"]
-memory = ["chromadb>=0.5,<0.6", "sentence-transformers>=3.0"]
-chat = ["pytchat>=0.5"]
 
 [dependency-groups]
 dev = [
@@ -46,18 +41,6 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
 "scripts/bench_speaker_output.py" = ["E402"]
-
-[tool.coverage.run]
-omit = [
-    "zemory/__main__.py",
-    "zemory/audio.py",
-    "zemory/client.py",
-    "zemory/orchestrator.py",
-    "zemory/providers/stt/openai_whisper.py",
-    "zemory/providers/tts/elevenlabs.py",
-    "zemory/providers/turn/silero.py",
-    "zemory/tts.py",
-]
 
 [tool.coverage.report]
 fail_under = 80

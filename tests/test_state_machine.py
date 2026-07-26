@@ -1,4 +1,4 @@
-"""StateMachine unit tests — atomic transitions, mute derivation, listeners."""
+"""StateMachine unit tests — atomic transitions and listeners."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from zemory.state import Phase, StateMachine
 async def test_initial_phase_is_listening():
     sm = StateMachine()
     assert sm.phase == Phase.LISTENING
-    assert sm.mute_mic is True  # LISTENING ≠ ACTIVE → mic muted
 
 
 @pytest.mark.asyncio
@@ -22,7 +21,6 @@ async def test_transition_returns_old_and_mutates():
     old = await sm.transition(Phase.ACTIVE)
     assert old == Phase.LISTENING
     assert sm.phase == Phase.ACTIVE
-    assert sm.mute_mic is False  # ACTIVE → mic live
 
 
 @pytest.mark.asyncio

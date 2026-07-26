@@ -3,6 +3,15 @@
 > 조사일: 2026-06-27
 > 목적: zemory-sama 저지연 실시간 음성 에이전트 설계 개정을 위한 최신 근거 정리.
 
+> [!NOTE]
+> **Historical evidence snapshot with a 2026-07-26 implementation correction.**
+> 아래 외부 자료와 당시 판단은 조사일 기준으로 보존한다. 다만 실험적으로 추가됐던
+> `TranscriptLedger`는 prompt, compaction, persistence consumer가 없어 현재 코드에서
+> 제거됐다. 현재 conversation source는 provider state와 generation-correlated runtime
+> handling이며, SQLite memory/context scheduler는 `local_cascade`만 실제로 소비한다.
+> 현재 운영 상태는 [2026-07-26 adversarial audit](adversarial-audit-2026-07-26.md)을
+> 기준으로 한다.
+
 ## Evidence Boundaries
 
 - **Sourced facts**: 공식 OpenAI 문서, arXiv 논문, GitHub repository/README/release/API에서 확인한 내용이다.
@@ -19,7 +28,7 @@
 | [Realtime conversations](https://developers.openai.com/api/docs/guides/realtime-conversations) | Realtime session 예시는 `model: "gpt-realtime-2"`, `output_modalities: ["audio"]`, `semantic_vad`, output voice `marin`을 사용한다. 세션 최대 길이는 60분이다. | config/schema/event adapter 를 GA 기준으로 업데이트한다. 장기 세션 compaction 이 필요하다. |
 | [Voice activity detection](https://developers.openai.com/api/docs/guides/realtime-vad) | `server_vad`는 침묵 기반, `semantic_vad`는 사용자가 말을 끝냈는지 의미 기반으로 판단한다. `semantic_vad`는 `eagerness`로 조절한다. | 한국어/영어 턴 종료는 `semantic_vad` 우선, `server_vad`/Silero fallback 으로 둔다. |
 | [Realtime with tools](https://developers.openai.com/api/docs/guides/realtime-mcp) | Realtime session 에 function tool, remote MCP server, built-in connector 를 붙일 수 있다. tool 은 session 또는 response 단위로 설정 가능하다. | memory/RAG/tool 은 sideband/async layer 로 설계하고, pending result 처리를 명시한다. |
-| [Developer notes on Realtime API](https://developers.openai.com/blog/realtime-api) | GA Realtime 은 image input, async function calling, MCP, audio token to text, long context, SIP, idle timeout 등을 포함한다. 세션은 최대 60분, `gpt-realtime` 계열 context 는 32,768 tokens, response max 는 4,096 tokens, instructions+tools max 는 16,384 tokens 이다. | 자동 truncation 에 맡기지 말고 TranscriptLedger/ContextCompactor 를 둔다. MCP와 async function calling 은 GA 경로에서 다룬다. |
+| [Developer notes on Realtime API](https://developers.openai.com/blog/realtime-api) | GA Realtime 은 image input, async function calling, MCP, audio token to text, long context, SIP, idle timeout 등을 포함한다. 세션은 최대 60분, `gpt-realtime` 계열 context 는 32,768 tokens, response max 는 4,096 tokens, instructions+tools max 는 16,384 tokens 이다. | 조사 당시에는 `TranscriptLedger`/`ContextCompactor`를 미래 설계로 제안했다. 현재 구현은 둘을 제공하지 않고 Realtime native retention-ratio truncation을 사용한다. MCP와 async function calling 은 GA 경로에서 다룬다. |
 
 ## 2. Speech Research Signals
 
@@ -50,17 +59,17 @@
 
 | Area | Local fact | Design implication |
 | --- | --- | --- |
-| Current config | 구현 전 스냅샷에서는 `gpt-4o-mini-realtime-preview` + text/external TTS 전제였으나, 현재 구현은 `realtime_audio` 기본 프로파일, `gpt-realtime-2`, GA `session.audio.*`, `semantic_vad`로 갱신됐다. | 기본 fast path 는 GA audio-native 로 전환됐다. |
+| Current config | 구현 전 스냅샷에서는 `gpt-4o-mini-realtime-preview` + text/external TTS 전제였으나, 2026-07-26 현재 구현은 `realtime_audio` 기본 프로파일, `gpt-realtime-2.1`, GA `session.audio.*`, app-owned response creation을 위한 `server_vad`로 갱신됐다. | 기본 fast path 는 GA audio-native 로 전환됐고, non-empty transcript를 확인한 뒤에만 응답을 만든다. |
 | Provider shape | `zemory/providers/base.py`에는 provider abstraction 이 이미 있다. | 전면 rewrite 보다 profile adapter 교체가 맞다. |
-| Interrupt | `InterruptBus` partial callback wiring 은 현재 `on_partial=on_partial_abort`로 연결되어 있고, Realtime speech-start handler는 partial text를 보존한 뒤 interrupt를 트리거한다. | partial assistant preservation 은 테스트로 고정됐다. |
-| Memory | optional Chroma dependency는 남아 있으나, 현재 core에는 외부 서비스 없는 `SQLiteMemoryStore`, `TranscriptLedger`, `AsyncContextScheduler`가 추가됐다. | blocking Chroma-first 설계 대신 deadline 기반 local memory recall 로 시작한다. |
+| Interrupt | `InterruptBus`의 partial callback은 현재 내용 자체를 저장하지 않고 길이만 기록한다. Realtime audio는 실제 재생 cursor까지만 provider item을 truncate하고, external-TTS는 전체 assistant item을 delete한 뒤 generic interruption note를 남긴다. 두 mutation은 ACK 전 다음 response를 만들지 않는다. | 들리지 않은 전체 답변을 local correction history나 provider context에 완료 발화처럼 보존하지 않는다. |
+| Memory | 2026-06-27 iteration에는 `SQLiteMemoryStore`, `TranscriptLedger`, `AsyncContextScheduler`가 추가됐었다. 2026-07-26 현재 consumer가 없던 `TranscriptLedger`와 optional Chroma dependency는 제거됐고, SQLite provider와 scheduler 결과는 `local_cascade`만 소비한다. Realtime profile은 null memory provider를 사용해 시작 시 DB를 만들지 않는다. | blocking Chroma-first 대신 deadline 기반 local-cascade recall은 유지하되, canonical history/compaction은 별도 미래 설계로 남긴다. |
 | Tests | 기존 tests 에 GA Realtime profile/event tests, fake SDK adapter tests, async memory/tool deadline tests, SQLite memory tests, latency report/CLI tests, speech-start interrupt tests, local VAD fallback tests 가 추가됐다. `uv run pytest tests/`는 core coverage >= 80% gate 를 포함한다. | 사용자 인터랙션 없이 핵심 설계 경로를 검증한다. |
 
 ## 5. Design Decisions
 
-1. **Default to audio-native Realtime**: OpenAI 공식 문서가 저지연 voice agent 에 `gpt-realtime-2` live audio session 을 직접 제시하므로, external TTS 체인을 기본 경로로 둘 이유가 약해졌다.
+1. **Default to audio-native Realtime**: 조사 당시 OpenAI 공식 문서가 저지연 voice agent 에 `gpt-realtime-2` live audio session 을 직접 제시했고, 현재 구현은 이를 `gpt-realtime-2.1`로 올렸다. external TTS 체인은 선택 프로파일로 유지한다.
 2. **Keep chained voice as a profile**: 외부 TTS 목소리와 중간 텍스트 제어가 필요할 때는 chained pipeline 이 여전히 맞다.
-3. **Prefer semantic VAD, measure multilingual turns**: semantic VAD는 의미 기반 turn completion 이라 한국어 어미와 영어 fragment/backchannel 처리에 유리할 수 있다. 단, fixture 로 검증한다.
+3. **Use server VAD for app-owned response creation**: semantic VAD의 의미 기반 turn completion은 연구 후보로 남기되, 현재 기본값은 `server_vad`이다. 서버 자동 응답은 끄고 non-empty, item-correlated transcript를 받은 뒤 앱이 정확히 한 번 `response.create`를 보낸다.
 4. **Make RAG asynchronous**: 2025-2026 연구들은 retrieval/tool latency 를 대화 흐름과 분리하는 방향을 반복해서 보여준다.
 5. **Treat full-duplex SLMs as watch/research**: Moshi/Raon/BayLing 계열은 방향성이 강하지만, hardware, model quality, multilingual behavior, integration cost 검증 전에는 production default 가 아니다.
 6. **Use active references conservatively**: AIRI는 active architecture reference, Open-LLM-VTuber는 v2 rewrite watch, RealtimeVoiceChat/Neuro는 pattern-only다.

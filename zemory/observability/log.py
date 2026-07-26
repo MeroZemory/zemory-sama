@@ -35,7 +35,10 @@ def configure_logging(level: str = "INFO") -> None:
         wrapper_class=structlog.make_filtering_bound_logger(
             getattr(logging, level.upper(), logging.INFO)
         ),
-        cache_logger_on_first_use=True,
+        # Keep module-level lazy proxies reconfigurable. This is required for
+        # capture_logs() and for deliberate runtime/test logging reconfiguration;
+        # a first-use cache would permanently pin the previous processor chain.
+        cache_logger_on_first_use=False,
     )
 
 

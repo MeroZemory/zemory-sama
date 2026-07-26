@@ -1,6 +1,7 @@
-# zemory-sama Project Intent
+# realtime-voice-runtime Project Intent
 
 > Date: 2026-06-27
+> Last validated: 2026-07-26
 > Scope: tracked source, tests, configuration, and design documents. `.env` is
 > intentionally excluded because it may contain secrets.
 
@@ -23,7 +24,11 @@ The project is optimized for the moment after a user stops speaking:
 - keep provider boundaries simple enough to replace model, VAD, STT, or TTS
 
 The default fast path is now `realtime_audio`: OpenAI Realtime GA audio
-input/output with `gpt-realtime-2`, `semantic_vad`, and direct PCM playback.
+input/output with `gpt-realtime-2.1`, `server_vad` at a 200 ms silence window,
+one-short-sentence responses, and direct PCM playback. Microphone frames cross
+an ordered 32-frame sender boundary; overflow or provider-send failure is
+terminal because continuing after a dropped frame would make the server's
+audio stream discontinuous.
 
 ## Current Runtime Profiles
 
@@ -45,8 +50,14 @@ preview Realtime implementation has been removed.
 - Audio-native response routing via `response.output_audio.delta`.
 - External TTS route with sentence chunking and ordered parallel playback.
 - `InterruptBus` for speaker clear, TTS abort, LLM cancel, and partial capture.
-- `TranscriptLedger` for local conversation history.
-- SQLite local memory store and deadline-bound async context scheduler.
+- Generation/response-correlated provider history; there is no independent
+  shadow transcript ledger.
+- SQLite local memory store and deadline-bound async context scheduler for
+  `local_cascade`. Realtime profiles use a null memory provider and do not
+  create the SQLite file during startup.
+- Bounded microphone/speaker queues, input/output callback-health monitoring,
+  and fail-closed device-loss propagation.
+- Per-resource deadline cleanup isolated from turn orchestration.
 - Latency report utility and `scripts/bench_latency.py`.
 - Hardware-free regression tests for core contracts.
 
@@ -56,6 +67,7 @@ preview Realtime implementation has been removed.
 - Live2D/VRM/OBS avatar output.
 - Twitch, YouTube, Discord, and other side-channel chat sources.
 - Production long-session compaction and vector memory.
+- Acoustic echo cancellation and automatic device/transport reconnect.
 - Hosted deployment and CI automation.
 - Full-duplex local speech model experiments.
 
@@ -66,6 +78,9 @@ preview Realtime implementation has been removed.
 - Keep context retrieval deadline-bound so memory and tools cannot block first
   audio.
 - Keep interruption state explicit and tested.
+- Fail closed on discontinuous audio, dead device callbacks, or unknown
+  provider ownership instead of silently continuing a corrupted session.
+- Create persistent resources only in profiles that actually consume them.
 - Do not preserve stale preview API paths in runtime code.
 
 ## Success Criteria
@@ -80,6 +95,20 @@ This stage is successful when:
   audio hardware
 - real manual sessions can run with microphone and speaker devices without
   configuration drift from the tested contracts
+
+The latency thresholds are aspirational gates, not a claim that every current
+sample passes. The 2026-07-26 automatic server-VAD n=8 run was valid without
+early cutoff but measured p50/p95 1574.5/2013.7 ms from final source audio to
+first API audio. Correctness and liveness changes remain accepted; they are not
+reported as an end-to-end latency win.
+
+## Runtime Configuration Contract
+
+The repository-root `.env` is loaded automatically and intentionally remains
+outside this document's review scope. An exported process variable overrides
+the same `.env` variable, and `.env` overrides `config.toml` and source
+defaults. An old model override can therefore mask a source migration; the
+startup log's effective profile/model is authoritative for a manual run.
 
 ## Primary References
 

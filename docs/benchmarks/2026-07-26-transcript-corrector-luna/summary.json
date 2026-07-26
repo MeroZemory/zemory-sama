@@ -1,0 +1,44 @@
+{
+  "schema_version": "zemory.transcript-corrector-model-eval.v1",
+  "generated_at": "2026-07-26",
+  "api": "v1/chat/completions",
+  "reasoning_effort": "none",
+  "temperature": 0.0,
+  "max_completion_tokens": 512,
+  "fixture_count": 9,
+  "results": [
+    {
+      "model": "gpt-5.4-mini",
+      "exact_matches": 8,
+      "fixture_count": 9,
+      "p50_ms": 882.8,
+      "common_8_estimated_cost_usd": 0.001159
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "exact_matches": 9,
+      "fixture_count": 9,
+      "p50_ms": 653.6,
+      "common_8_estimated_cost_usd": 0.001534
+    }
+  ],
+  "published_price_per_million_tokens_usd": {
+    "gpt-5.4-mini": {
+      "input": 0.75,
+      "cached_input": 0.075,
+      "output": 4.5
+    },
+    "gpt-5.6-luna": {
+      "input": 1.0,
+      "cached_input": 0.1,
+      "output": 6.0,
+      "cache_write_multiplier": 1.25
+    }
+  },
+  "provenance_limitations": {
+    "per_fixture_outputs_retained": false,
+    "per_call_token_counts_retained": false,
+    "fixture_corpus_hash_retained": false,
+    "note": "This file preserves the aggregate decision evidence transcribed during the live A/B. The original per-call usage and fixture corpus were not persisted, so the cost estimate cannot be independently recomputed from this artifact."
+  }
+}

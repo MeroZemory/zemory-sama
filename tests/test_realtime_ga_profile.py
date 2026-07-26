@@ -25,18 +25,21 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
     session = cfg.build_session_config()
 
     assert session["type"] == "realtime"
-    assert session["model"] == "gpt-realtime-2"
+    assert session["model"] == "gpt-realtime-2.1"
     assert session["output_modalities"] == ["audio"]
     assert session["audio"]["input"]["format"] == {
         "type": "audio/pcm",
         "rate": 24_000,
+    }
+    assert session["audio"]["input"]["transcription"] == {
+        "model": "gpt-4o-mini-transcribe",
     }
     assert session["audio"]["input"]["turn_detection"] == {
         "type": "server_vad",
         "threshold": 0.5,
         "prefix_padding_ms": 300,
         "silence_duration_ms": 200,
-        "create_response": True,
+        "create_response": False,
         "interrupt_response": False,
     }
     assert session["audio"]["output"]["format"] == {
@@ -45,6 +48,12 @@ def test_default_session_config_is_audio_native_realtime_ga() -> None:
     }
     assert session["audio"]["output"]["voice"] == "marin"
     assert session["reasoning"]["effort"] == "low"
+    assert session["max_output_tokens"] == 512
+    assert session["truncation"] == {
+        "type": "retention_ratio",
+        "retention_ratio": 0.8,
+        "token_limits": {"post_instructions": 8_000},
+    }
     assert "one short sentence maximum" in session["instructions"]
     assert "max_response_output_tokens" not in session
     assert "temperature" not in session
@@ -57,9 +66,12 @@ def test_external_tts_profile_requests_text_output(monkeypatch) -> None:
     session = cfg.build_session_config()
 
     assert session["type"] == "realtime"
-    assert session["model"] == "gpt-realtime-2"
+    assert session["model"] == "gpt-realtime-2.1"
     assert session["output_modalities"] == ["text"]
     assert session["audio"]["input"]["turn_detection"]["type"] == "server_vad"
+    assert session["audio"]["input"]["transcription"] == {
+        "model": "gpt-4o-mini-transcribe",
+    }
     assert "output" not in session["audio"]
 
 
@@ -71,6 +83,7 @@ def test_local_cascade_profile_disables_server_turn_detection(monkeypatch) -> No
     assert session["type"] == "realtime"
     assert session["output_modalities"] == ["text"]
     assert session["audio"]["input"]["turn_detection"] is None
+    assert "transcription" not in session["audio"]["input"]
 
 
 def test_realtime_audio_can_disable_server_turn_detection(monkeypatch) -> None:
@@ -153,4 +166,17 @@ def test_normalizes_ga_audio_and_text_events() -> None:
     assert OpenAIRealtimeLLM._normalize(transcript_event) == {
         "type": "audio.transcript.delta",
         "delta": "안녕",
+    }
+
+
+def test_normalizes_input_transcription_failure_without_exposing_payload() -> None:
+    event = SimpleNamespace(
+        type="conversation.item.input_audio_transcription.failed",
+        item_id="item-input",
+        error=SimpleNamespace(message="potentially sensitive provider text"),
+    )
+
+    assert OpenAIRealtimeLLM._normalize(event) == {
+        "type": "input.transcript.failed",
+        "item_id": "item-input",
     }

@@ -1,5 +1,16 @@
 # zemory-sama 실시간 음성 에이전트 설계
 
+> [!WARNING]
+> **Historical and superseded design snapshot.** 이 문서는 2026-06-27 당시의
+> 가정과 제안을 보존하며 현재 운영 명세가 아니다. 현재 소스 기본값은
+> `gpt-realtime-2.1`, `server_vad`, 서버 측 retention-ratio truncation을
+> 사용한다. 실행·구성은 [README](../../README.md), 모델 변경 근거는
+> [Realtime 2.1 migration](../ref/realtime-2.1-migration-2026-07-26.md)을
+> 기준으로 확인한다.
+> 아래 `TranscriptLedger`/`ContextCompactor`는 당시의 **미래 target proposal**이다.
+> 실험 ledger는 consumer가 없어 2026-07-26 현재 제거됐으며, 현재 runtime에 durable
+> canonical transcript ledger나 atomic compactor가 구현됐다는 뜻이 아니다.
+
 > 개정일: 2026-06-27
 > 근거 스냅샷: [docs/ref/current-state-2026-06-27.md](../ref/current-state-2026-06-27.md)
 
@@ -62,7 +73,7 @@ AudioIngress
   v
 RealtimeSessionAdapter / CascadeSessionAdapter
   |
-  +--> TranscriptLedger
+  +--> TranscriptLedger [future proposal; not current runtime]
   +--> InterruptController
   +--> AsyncContextScheduler
   |      - memory recall
@@ -103,8 +114,8 @@ ResponseStream
 
 Realtime 세션은 60분까지 갈 수 있지만 context window 는 무한하지 않다. 자동 truncation 에 맡기면 캐릭터 상태와 장기 기억 연결이 끊길 수 있다.
 
-- `TranscriptLedger`는 모든 user/assistant transcript, interruption, tool result 를 durable log 로 남긴다.
-- `ContextCompactor`는 일정 토큰 또는 시간 기준으로 요약을 생성해 session 앞부분 손실 전에 durable memory 로 보낸다.
+- 미래 제안인 `TranscriptLedger`는 모든 user/assistant transcript, interruption, tool result 를 durable log 로 남긴다. 현재 runtime에는 구현돼 있지 않다.
+- 미래 제안인 `ContextCompactor`는 일정 토큰 또는 시간 기준으로 요약을 생성해 session 앞부분 손실 전에 durable memory 로 보낸다. 현재는 Realtime native truncation만 사용한다.
 - session truncation 설정은 명시적으로 config 에 둔다. 기본은 자동 truncation 허용 + 자체 summary 선행이다.
 
 ## 6. TurnLayer
@@ -229,7 +240,7 @@ Priority 는 단순하게 유지한다.
 | --- | --- | --- |
 | Persona/system | 10 | session start/update |
 | Durable summary | 40 | session update 또는 hidden context |
-| Recent history | 50 | TranscriptLedger window |
+| Recent history | 50 | 미래 `TranscriptLedger` window 제안; 현재 구현 아님 |
 | Memory hits | 60 | deadline 내 도착 시 |
 | Tool result | 80 | 도착 즉시, stale 검사 |
 | Chat side input | 150 | rate limit + compact |
@@ -304,7 +315,7 @@ Release gate:
 
 ### Phase 4: Async memory/tool layer
 
-- `TranscriptLedger`, `MemoryStore`, `AsyncContextScheduler`를 추가한다. (SQLite local store 구현됨)
+- `TranscriptLedger`, `MemoryStore`, `AsyncContextScheduler`를 추가한다. 이 중 SQLite local store/scheduler primitive만 유지됐고, 실험 `TranscriptLedger`는 consumer 0으로 제거됐다. canonical history source는 미래 재설계 대상이다.
 - memory recall deadline 과 late-result policy 를 테스트한다. (구현됨)
 - tool/RAG callable deadline 과 late-result policy 를 테스트한다. (구현됨)
 - Realtime async function calling/MCP 경로는 tool policy 가 준비된 뒤 켠다.

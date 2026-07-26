@@ -10,7 +10,9 @@ from typing import Any
 from zemory.observability.latency_report import (
     LatencyReport,
     _exclude_extreme_outliers,
+    _is_finite_non_negative,
     _percentile_nearest_rank,
+    sanitize_latency_event,
 )
 
 SECONDARY_LATENCY_FIELDS = (
@@ -40,30 +42,34 @@ def write_benchmark_artifacts(
     """Write numeric-only benchmark artifacts and return their paths."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    report = LatencyReport.from_events(events)
+    safe_events = [sanitize_latency_event(event) for event in events]
+    report = LatencyReport.from_events(safe_events)
 
     events_jsonl = out / "latency-events.jsonl"
     summary_json = out / "summary.json"
     markdown = out / "README.md"
     svg = out / "latency.svg"
 
-    _write_jsonl(events_jsonl, events)
+    _write_jsonl(events_jsonl, safe_events)
     summary = {
         "title": title,
         "source_note": source_note,
-        "total_event_count": len(events),
-        "invalid_latency_count": sum(
-            1
-            for event in events
-            if event.get("event") == "turn.complete"
-            and event.get("total_ms") is None
+        "total_event_count": len(safe_events),
+        "invalid_latency_count": (
+            report.invalid_turn_count + report.invalid_interrupt_count
         ),
-        "early_cutoff_count": sum(1 for event in events if event.get("early_cutoff")),
         **report.as_dict(),
-        **_secondary_latency_summaries(events),
+        **_secondary_latency_summaries(safe_events),
     }
     summary_json.write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        json.dumps(
+            summary,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n",
         encoding="utf-8",
     )
     markdown.write_text(_markdown(summary), encoding="utf-8")
@@ -78,7 +84,10 @@ def write_benchmark_artifacts(
 
 
 def _write_jsonl(path: Path, events: list[dict[str, Any]]) -> None:
-    rows = [json.dumps(event, ensure_ascii=False, sort_keys=True) for event in events]
+    rows = [
+        json.dumps(event, ensure_ascii=False, sort_keys=True, allow_nan=False)
+        for event in events
+    ]
     path.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
 
@@ -88,7 +97,9 @@ def _secondary_latency_summaries(events: list[dict[str, Any]]) -> dict[str, floa
         values = [
             float(event[field])
             for event in events
-            if event.get("event") == "turn.complete" and event.get(field) is not None
+            if event.get("event") == "turn.complete"
+            and event.get(field) is not None
+            and _is_finite_non_negative(event[field])
         ]
         if not values:
             continue
@@ -143,6 +154,8 @@ def _markdown(summary: dict[str, Any]) -> str:
 | total events | {summary["total_event_count"]} |
 | invalid latency samples | {summary["invalid_latency_count"]} |
 | early cutoffs | {summary["early_cutoff_count"]} |
+| metric origins | {len(summary["metric_origins"])} |
+| metric schemas | {len(summary["metric_schemas"])} |
 | turn min | {summary["turn_min_ms"]:.1f} ms |
 | turn mean | {summary["turn_mean_ms"]:.1f} ms |
 | turn p50 | {summary["turn_p50_ms"]:.1f} ms |
@@ -152,6 +165,7 @@ def _markdown(summary: dict[str, Any]) -> str:
 | extreme outliers | {summary["turn_extreme_outlier_count"]} |
 | observed max, diagnostic | {summary["turn_max_ms"]:.1f} ms |
 {secondary_rows}| interrupt count | {summary["interrupt_count"]} |
+| invalid interrupt samples | {summary["invalid_interrupt_count"]} |
 | interrupt p95 | {interrupt_value} |
 
 ![Latency chart](latency.svg)

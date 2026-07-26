@@ -2,6 +2,10 @@
 __pycache__/
 *.pyc
 .venv/
+.coverage
+.pytest_cache/
+.ruff_cache/
+htmlcov/
 dist/
 *.egg-info/
 .zemory/

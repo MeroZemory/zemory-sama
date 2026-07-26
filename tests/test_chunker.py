@@ -73,3 +73,15 @@ def test_incremental_delta_accumulation():
         collected.extend(c.add(tok))
     assert collected == ["Hello world."]
     assert c.flush() == "Byeh"
+
+
+def test_punctuation_free_model_output_is_bounded() -> None:
+    c = SentenceChunker()
+
+    chunks = c.add("word " * 250)
+    tail = c.flush()
+
+    assert chunks
+    assert all(0 < len(chunk) <= 240 for chunk in chunks)
+    assert tail is not None and len(tail) < 240
+    assert "".join(chunks + [tail]).replace(" ", "") == "word" * 250

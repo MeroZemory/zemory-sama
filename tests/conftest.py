@@ -97,12 +97,23 @@ class FakeLLM:
 
     def __init__(self) -> None:
         self.cancel_called = 0
+        self.clear_called = 0
 
-    async def cancel_current(self) -> None:
+    async def cancel_current(self, response_id: str | None = None) -> None:
         self.cancel_called += 1
 
-    async def clear_input_buffer(self) -> None:  # pragma: no cover - unused path
-        return None
+    async def clear_input_buffer(
+        self,
+        *,
+        generation_id: int | None = None,
+    ) -> None:
+        self.clear_called += 1
 
-    async def send_user_text(self, text: str, injections=None) -> None:
+    async def send_user_text(
+        self,
+        text: str,
+        injections=None,
+        *,
+        generation_id: int | None = None,
+    ) -> None:
         return None

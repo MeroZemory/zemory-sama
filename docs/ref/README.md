@@ -2,6 +2,13 @@
 
 > zemory-sama 설계에 참고한 7개 오픈소스 프로젝트 분석 문서. 모든 레포는 `_ref/` 하위에 shallow clone 되어 있음.
 
+## 현재 운영 검수·결정
+
+- **[adversarial-audit-2026-07-26.md](./adversarial-audit-2026-07-26.md)** — 전체 아키텍처, 장애 원인, 적대적 검수, 독립 실험 판정과 사용자 요구 추적성
+- **[realtime-2.1-migration-2026-07-26.md](./realtime-2.1-migration-2026-07-26.md)** — full/mini 비용·live fixture 비교와 기본값 결정
+- **[transcript-corrector-luna-migration-2026-07-26.md](./transcript-corrector-luna-migration-2026-07-26.md)** — Luna 정확도·latency·비용 A/B
+- **[codex-compaction-compatibility-2026-07-26.md](./codex-compaction-compatibility-2026-07-26.md)** — 최신 Codex compaction과 Realtime transport 차이
+
 ## 시작점
 
 - **[comparison.md](./comparison.md)** — 7개 레퍼런스 비교표 + zemory-sama 적용 로드맵 (Tier A/B/C)
